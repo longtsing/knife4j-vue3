@@ -58,6 +58,7 @@
 | **Spring Boot** (SpringDoc / Springfox) | Java | 2.0 / 3.0 | ⭐ 极简 | ✅ 完全支持 |
 | **FastAPI** | Python | 3.0 | ⭐⭐ 简单 | ✅ 完全支持 |
 | **LiteStar** | Python | 3.0 | ⭐⭐ 简单 | ✅ 完全支持 |
+| **Gin** | Go | 3.0 | ⭐⭐ 简单 | ✅ 完全支持 |
 | **JFinal** | Java | 2.0 / 3.0 | ⭐ 极简 | ✅ 完全支持 |
 | **通用 OpenAPI 3.0** | 任意语言 | 3.0 | ⭐⭐⭐ 中等 | ✅ 完全支持 |
 
@@ -169,13 +170,27 @@ async def knife4j_ui():
         return Response(content=f.read(), media_type="text/html")
 ```
 
+### Go Gin（5 行配置）
+
+```go
+// swagger-config 端点
+r.GET("/v3/api-docs/swagger-config", func(c *gin.Context) {
+    c.JSON(200, gin.H{
+        "urls": []gin.H{{"url": "/openapi.json", "name": "default"}},
+    })
+})
+// Knife4j 静态文件
+r.Static("/static", "./static")
+r.GET("/doc.html", func(c *gin.Context) { c.File("./static/doc.html") })
+```
+
 > 📚 完整集成指南请参阅 [docs/](./docs/) 目录
 
 ---
 
 ## 示例项目
 
-`examples/` 目录包含三个**开箱即用**的完整示例：
+`examples/` 目录包含四个**开箱即用**的完整示例：
 
 ```bash
 # 一键配置（Windows）
@@ -191,6 +206,8 @@ cd examples/fastapi && uvicorn main:app --port 8000
 | [Java Spring Boot](./examples/java-springboot) | `mvn spring-boot:run` | http://localhost:8080/doc.html |
 | [FastAPI](./examples/fastapi) | `uvicorn main:app --port 8000` | http://localhost:8000/doc.html |
 | [LiteStar](./examples/litestar) | `uvicorn main:app --port 8000` | http://localhost:8000/doc.html |
+| [Go Gin](./examples/go) | `go run main.go` | http://localhost:8080/doc.html |
+| [Go 标准库](./examples/go-stdlib) | `go run main.go`（零依赖） | http://localhost:8080/doc.html |
 
 ---
 
@@ -255,12 +272,16 @@ knife4j-vue3/
 │   ├── java-springboot/             # Spring Boot 完整示例
 │   ├── fastapi/                     # FastAPI 完整示例
 │   ├── litestar/                    # LiteStar 完整示例
+│   ├── go/                          # Go Gin 完整示例
+│   ├── go-stdlib/                   # Go 标准库示例（零依赖）
 │   └── setup.bat                    # 一键配置脚本
 │
 ├── docs/                            # 集成文档
 │   ├── java-springboot.md           # Java 集成指南
 │   ├── python-fastapi.md            # FastAPI 集成指南
-│   └── python-litestar.md           # LiteStar 集成指南
+│   ├── python-litestar.md           # LiteStar 集成指南
+│   ├── go-gin.md                    # Go Gin 集成指南
+│   └── go-stdlib.md                 # Go 标准库集成指南（零依赖）
 │
 ├── doc.html                         # 构建入口 HTML
 ├── vite.config.js                   # Vite 构建配置

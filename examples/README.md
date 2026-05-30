@@ -9,6 +9,8 @@ examples/
 ├── java-springboot/    # Java Spring Boot 示例
 ├── fastapi/            # Python FastAPI 示例
 ├── litestar/           # Python LiteStar 示例
+├── go/                 # Go Gin 示例
+├── go-stdlib/          # Go 标准库示例（零依赖）
 └── README.md           # 本文件
 ```
 
@@ -73,6 +75,37 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 访问 http://localhost:8000/doc.html
+
+#### Go Gin
+
+```bash
+cd examples/go
+
+# 初始化模块
+go mod tidy
+
+# 将前端产物复制到 static 目录
+cp -r ../../dist/* static/
+
+# 启动服务
+go run main.go
+```
+
+访问 http://localhost:8080/doc.html
+
+#### Go 标准库（零依赖）
+
+```bash
+cd examples/go-stdlib
+
+# 将前端产物复制到 static 目录
+cp -r ../../dist/* static/
+
+# 启动服务（无需 go mod tidy，零依赖）
+go run main.go
+```
+
+访问 http://localhost:8080/doc.html
 
 ## 示例功能
 
