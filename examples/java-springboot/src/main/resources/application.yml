@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    groups:
+      - group: default
+        paths-to-match: /api/**
+  swagger-ui:
+    path: /doc.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+# Knife4j 配置
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    enable_swagger_models: true
+    enable_request_cache: true
