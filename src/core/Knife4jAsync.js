@@ -64,21 +64,19 @@ function SwaggerBootstrapUi(options) {
   this.swaggerData = null;
   //  LiteStar 适配 - 默认启用 springdoc 模式以支持 OpenAPI 3.0
   this.springdoc = options.springdoc || true;
+  console.log('🔍 Knife4jAsync - options.url:', options.url);
+  console.log('🔍 Knife4jAsync - options:', JSON.stringify(options, null, 2));
   //  此处判断底层框架版本
   //  1、springfox提供的分组地址/swagger-resources
   //  2、springdoc-open/LiteStar/FastAPI提供的分组地址：v3/api-docs/swagger-config
   //  swagger请求api地址
   if (this.springdoc) {
-    //  OpenAPI 3.0 框架（FastAPI、LiteStar 等）：优先使用 v3/api-docs/swagger-config
-    const path = window.location.pathname;
-    const index = path.lastIndexOf('/');
-    const basePath = path.length == index + 1 ? path : path.substring(0, index);
-    //  优先使用传入的 URL，否则使用 /v3/api-docs/swagger-config
+    //  OpenAPI 3.0 框架（FastAPI、LiteStar 等）：使用传入的 URL（已包含 apiBasePath）
     this.url = options.url || '/v3/api-docs/swagger-config';
-    //  备用 URL：尝试 /api 前缀版本（FastAPI 常用）
-    this.fallbackUrl = basePath + '/api/v3/api-docs/swagger-config';
-    console.log('OpenAPI 3.0 Mode - Primary URL:', this.url);
-    console.log('OpenAPI 3.0 Mode - Fallback URL:', this.fallbackUrl);
+    //  不再需要 fallbackUrl，因为 URL 已在 BasicLayout.vue 中正确构建
+    this.fallbackUrl = null;
+    console.log('🔍 Knife4jAsync - final this.url:', this.url);
+    console.log('OpenAPI 3.0 Mode - URL:', this.url);
   } else {
     this.url = options.url || 'swagger-resources';
   }

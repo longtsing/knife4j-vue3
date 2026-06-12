@@ -5,6 +5,22 @@
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title></title>
+    <script>
+      // Knife4j 全局配置 - 自动检测 API 路径前缀
+      (function() {
+        // 获取当前页面路径，提取 doc.html 之前的部分作为 API 前缀
+        var path = window.location.pathname;
+        var docIndex = path.indexOf('/doc.html');
+        var apiBasePath = '';
+        if (docIndex > 0) {
+          apiBasePath = path.substring(0, docIndex);
+        }
+        window.KNIFE4J_CONFIG = {
+          apiBasePath: apiBasePath
+        };
+        console.log('Knife4j auto-detected apiBasePath:', apiBasePath);
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

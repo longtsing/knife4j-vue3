@@ -6,11 +6,12 @@
 // 框架配置常量
 export const FRAMEWORK_CONFIG = {
   // API 端点配置（OpenAPI 3.0 风格）
+  // 注意：所有路径已包含 /api 前缀，适应 root_path 配置
   endpoints: {
-    swaggerConfig: '/v3/api-docs/swagger-config',
+    swaggerConfig: '/api/v3/api-docs/swagger-config',
     swaggerConfigFallback: '/api/v3/api-docs/swagger-config',
-    openApiSchema: '/openapi.json',
-    apiDocs: '/v3/api-docs'
+    openApiSchema: '/api/openapi.json',
+    apiDocs: '/api/v3/api-docs'
   },
   
   // 框架信息（可根据实际后端框架动态调整）
@@ -53,29 +54,31 @@ export const FRAMEWORK_CONFIG = {
 
 // 获取 Knife4j 初始化选项
 export const getKnife4jOptions = () => {
+  // 读取部署配置的前缀
+  const apiBasePath = (typeof window !== 'undefined' && window.KNIFE4J_CONFIG?.apiBasePath) || '';
+
   return {
     // 启用 SpringDoc 模式以支持 OpenAPI 3.0（FastAPI、LiteStar 等）
     springdoc: true,
-    
+
     // 语言设置
     i18n: 'zh-CN',
-    
-    // URL 配置 - 使用 OpenAPI 3.0 风格端点
-    url: FRAMEWORK_CONFIG.endpoints.swaggerConfig,
-    // 不再使用 Springfox 风格的 uiConfig 端点
-    configUrl: FRAMEWORK_CONFIG.endpoints.swaggerConfig,
-    
+
+    // URL 配置 - 使用相对路径或配置的前缀
+    url: apiBasePath + '/v3/api-docs/swagger-config',
+    configUrl: apiBasePath + '/v3/api-docs/swagger-config',
+
     // 启用配置支持
     configSupport: true,
     securitySupport: false,
-    
+
     // 禁用 basePath 自动处理（现代框架使用 servers 配置）
     baseSpringFox: false,
-    
+
     // 框架信息
     framework: FRAMEWORK_CONFIG.framework.name,
     frameworkVersion: FRAMEWORK_CONFIG.framework.version,
-    
+
     // UI 配置
     customTitle: FRAMEWORK_CONFIG.ui.title,
     customDescription: FRAMEWORK_CONFIG.ui.description,

@@ -10,7 +10,12 @@ import { FRAMEWORK_CONFIG } from './config/framework.js'
 // 框架标识符（通用）
 window.KNIFE4J_FRAMEWORK = 'Generic';
 window.KNIFE4J_FRAMEWORK_VERSION = '1.0.0';
-window.KNIFE4J_CONFIG = FRAMEWORK_CONFIG;
+// 合并配置：保留 doc.html 中设置的 apiBasePath，添加其他框架配置
+window.KNIFE4J_CONFIG = {
+  ...window.KNIFE4J_CONFIG,  // 保留 doc.html 中设置的 apiBasePath
+  ...FRAMEWORK_CONFIG        // 添加框架配置
+};
+console.log('🔍 main.js - KNIFE4J_CONFIG after merge:', window.KNIFE4J_CONFIG);
 
 String.prototype.gblen = function () {
   let len = 0

@@ -217,6 +217,12 @@ function initSpringDocOpenApi() {
         // 通用框架配置（支持 FastAPI、LiteStar、Spring Boot 等）
         const framework = window.KNIFE4J_FRAMEWORK || 'Generic';
         const isSpringFox = framework === 'SpringFox';
+        // 读取自动检测的 API 前缀
+        const apiBasePath = window.KNIFE4J_CONFIG?.apiBasePath || '';
+        console.log('🔍 BasicLayout - apiBasePath from KNIFE4J_CONFIG:', apiBasePath);
+        console.log('🔍 BasicLayout - KNIFE4J_CONFIG:', window.KNIFE4J_CONFIG);
+        const swaggerUrl = apiBasePath + '/v3/api-docs/swagger-config';
+        console.log('🔍 BasicLayout - swaggerUrl:', swaggerUrl);
         
         initSwagger({
           springdoc: !isSpringFox, // 非 SpringFox 框架启用 SpringDoc 模式
@@ -234,7 +240,7 @@ function initSpringDocOpenApi() {
           framework: framework,
           frameworkVersion: window.KNIFE4J_FRAMEWORK_VERSION || '1.0.0',
           disableBasePath: !isSpringFox,
-          url: '/v3/api-docs/swagger-config' // 统一使用 OpenAPI 3.0 端点
+          url: swaggerUrl // 使用自动检测的前缀
         })
       } else {
         //不包含
@@ -250,6 +256,11 @@ function initSpringDocOpenApi() {
           // 通用框架配置（支持 FastAPI、LiteStar、Spring Boot 等）
           const framework = window.KNIFE4J_FRAMEWORK || 'Generic';
           const isSpringFox = framework === 'SpringFox';
+          // 读取自动检测的 API 前缀
+          const apiBasePath = window.KNIFE4J_CONFIG?.apiBasePath || '';
+          console.log('🔍 BasicLayout (else branch) - apiBasePath:', apiBasePath);
+          const swaggerUrl = apiBasePath + '/v3/api-docs/swagger-config';
+          console.log('🔍 BasicLayout (else branch) - swaggerUrl:', swaggerUrl);
           
           initSwagger({
             springdoc: !isSpringFox, // 非 SpringFox 框架启用 SpringDoc 模式
@@ -267,7 +278,7 @@ function initSpringDocOpenApi() {
             framework: framework,
             frameworkVersion: window.KNIFE4J_FRAMEWORK_VERSION || '1.0.0',
             disableBasePath: !isSpringFox,
-            url: '/v3/api-docs/swagger-config' // 统一使用 OpenAPI 3.0 端点
+            url: swaggerUrl // 使用自动检测的前缀
           })
         })
       }
