@@ -62,6 +62,7 @@ import localStore from '@/store/local.js'
 import { useI18n } from 'vue-i18n'
 import { PlusOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
+import { eventBus, GLOBAL_PARAMETERS_UPDATED } from "@/core/eventBus";
 
 export default {
   props: {
@@ -208,8 +209,8 @@ export default {
         const dfv = val;
         dfv[this.groupId] = this.globalParameters;
         localStore.setItem(Constants.globalParameter, dfv);
-        // 发送全局参数更新事件，使用Vue根实例作为事件总线
-        this.$root.$emit('global-parameters-updated', {
+        // 发送全局参数更新事件，使用事件总线
+        eventBus.emit(GLOBAL_PARAMETERS_UPDATED, {
           groupId: this.groupId,
           parameters: this.globalParameters
         });

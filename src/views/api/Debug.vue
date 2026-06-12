@@ -269,9 +269,13 @@
 </template>
 <script>
 import qs from "qs"
+import Constants from "@/store/constants";
 import KUtils from "@/core/utils";
 import KEnvironment from "@/core/Environment"
-import constant from "@/store/constants";
+import {
+  eventBus,
+  GLOBAL_PARAMETERS_UPDATED
+} from "@/core/eventBus";
 /* import EditorDebugShow from "./EditorDebugShow";
 import DebugResponse from "./DebugResponse"; */
 import DebugAxios from "axios";
@@ -347,8 +351,8 @@ export default {
       urlFormColumn: [],
       allowClear: true,
       pagination: false,
-      headerAutoOptions: constant.debugRequestHeaders,
-      headerOptions: constant.debugRequestHeaderOptions,
+      headerAutoOptions: Constants.debugRequestHeaders,
+      headerOptions: Constants.debugRequestHeaderOptions,
       headerCount: 0,
       headerCountFlag: false,
       headerSelectName: "",
@@ -444,12 +448,12 @@ export default {
     } else {
       this.debugUrlStyle = "width: 80%;"
     }
-    // 监听全局参数更新事件
-    this.$root.$on('global-parameters-updated', this.handleGlobalParametersUpdate);
+    // 监听全局参数更新事件 - 使用事件总线替代 this.$root.$on
+    eventBus.on(GLOBAL_PARAMETERS_UPDATED, this.handleGlobalParametersUpdate);
   },
   beforeUnmount() {
     // 组件销毁前移除事件监听
-    this.$root.$off('global-parameters-updated', this.handleGlobalParametersUpdate);
+    eventBus.off(GLOBAL_PARAMETERS_UPDATED, this.handleGlobalParametersUpdate);
   },
   watch: {
     language: function (val, oldval) {
@@ -493,7 +497,7 @@ export default {
       const key = this.api.instanceId;
       // console.log(this.headerData);
       // 初始化读取本地缓存全局参数
-      localStore.getItem(constant.globalParameter).then(val => {
+      localStore.getItem(Constants.globalParameter).then(val => {
         if (val != null) {
           if (val[key] != undefined && val[key] != null) {
             tempglobalParameters = val[key];
@@ -645,7 +649,14 @@ export default {
       this.debugUrl = e.target.value;
     },
     initDebugUrl() {
-      this.debugUrl = this.api.url;
+      // 如果 swaggerInstance.host 存在（来自 OpenAPI servers 配置），并且 api.url 没有包含该前缀，则拼接到 url 前面
+      let baseUrl = this.swaggerInstance?.host || '';
+      if (baseUrl && this.api.url.startsWith(baseUrl)) {
+        // api.url 已经包含 host 前缀，不再追加
+        this.debugUrl = this.api.url;
+      } else {
+        this.debugUrl = baseUrl + this.api.url;
+      }
       this.debugMethodType = this.api.methodType;
       // 判断是否为paht类型
       var reg = new RegExp("{(.*?)}", "ig");
@@ -663,7 +674,7 @@ export default {
       const key = this.api.instanceId;
       // console.log(this.api)
       // 读取是否开启请求缓存标志
-      localStore.getItem(constant.globalSettingsKey).then(settings => {
+      localStore.getItem(Constants.globalSettingsKey).then(settings => {
         if (KUtils.checkUndefined(settings)) {
           this.enableRequestCache = settings.enableRequestCache;
           // 判断settings是否包含动态参数的配置
@@ -688,21 +699,21 @@ export default {
           }
         }
         // 初始化读取本地缓存全局参数
-        localStore.getItem(constant.globalParameter).then(val => {
+        localStore.getItem(Constants.globalParameter).then(val => {
           if (val != null) {
             if (val[key] != undefined && val[key] != null) {
               this.globalParameters = val[key];
             }
           }
           // 当前接口的id作为缓存key值
-          var cacheApiKey = constant.debugCacheApiId + this.api.id;
+          var cacheApiKey = Constants.debugCacheApiId + this.api.id;
           localStore.getItem(cacheApiKey).then(cacheApi => {
             // 开始同步执行其他方法-初始化请求头参数
             this.initHeaderParameter(cacheApi);
             // 判断是否authorize中包含query
             // 不读api的默认请求头,根据用户选择的表单请求类型做自动请求头适配
             // 读取Author的参数情况
-            var securitykey = constant.globalSecurityParamPrefix + this.api.instanceId;
+            var securitykey = Constants.globalSecurityParamPrefix + this.api.instanceId;
             localStore.getItem(securitykey).then(val => {
               // console.log(val);
               // console.log(this.api)
@@ -780,7 +791,7 @@ export default {
       });
       // 不读api的默认请求头,根据用户选择的表单请求类型做自动请求头适配
       // 读取Author的参数情况
-      var key = constant.globalSecurityParamPrefix + this.api.instanceId;
+      var key = Constants.globalSecurityParamPrefix + this.api.instanceId;
       localStore.getItem(key).then(val => {
         // console("读取本都Auth请");
         if (KUtils.arrNotEmpty(val)) {
@@ -2551,7 +2562,16 @@ export default {
           url = checkResult.url;
           formParams = Object.assign(formParams, checkResult.params);
         }
-        let baseUrl = import.meta.env.VITE_APP_BASE_API
+        let baseUrl = this.swaggerInstance && this.swaggerInstance.host
+          ? this.swaggerInstance.host
+          : import.meta.env.VITE_APP_BASE_API
+        console.log("Debug baseUrl from swaggerInstance.host:", this.swaggerInstance?.host)
+        console.log("Debug final baseUrl:", baseUrl)
+        console.log("Debug url:", url)
+        // 如果 url 已经以 baseUrl 开头，说明 debugUrl 已经包含了完整路径，不再追加 baseUrl
+        if (url.startsWith(baseUrl)) {
+          baseUrl = '';
+        }
         // 是否启用Host
         if (this.enableHost) {
           baseUrl = this.enableHostText;
@@ -2658,7 +2678,9 @@ export default {
         url = validateFormd.url;
         // var formParams = this.debugFormDataParams(fileFlag);
         var formParams = validateFormd.params;
-        let baseUrl = import.meta.env.VITE_APP_BASE_API
+        let baseUrl = this.swaggerInstance && this.swaggerInstance.host
+          ? this.swaggerInstance.host
+          : import.meta.env.VITE_APP_BASE_API
         // 是否启用Host
         if (this.enableHost) {
           baseUrl = this.enableHostText;
@@ -2755,7 +2777,9 @@ export default {
           url = checkResult.url;
           formParams = Object.assign(formParams, checkResult.params);
         }
-        let baseUrl = import.meta.env.VITE_APP_BASE_API
+        let baseUrl = this.swaggerInstance && this.swaggerInstance.host
+          ? this.swaggerInstance.host
+          : import.meta.env.VITE_APP_BASE_API
         // 是否启用Host
         if (this.enableHost) {
           baseUrl = this.enableHostText;
@@ -2868,7 +2892,7 @@ export default {
           rawFormData: [],
           rawText: ""
         };
-        var cacheApiKey = constant.debugCacheApiId + this.api.id;
+        var cacheApiKey = Constants.debugCacheApiId + this.api.id;
         // 得到headercans
         cacheApi.headerData = this.headerData.filter(
           header => header.new == false

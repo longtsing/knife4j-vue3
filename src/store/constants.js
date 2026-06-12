@@ -47,16 +47,16 @@ const constants = {
   // 个性化设置名称
   globalSettingsKey: 'Knife4jGlobalSettings',
   globalTreeTableModelParams: 'Knife4jGlobalTreeTableModelParams',
-  // LiteStar 优化的默认设置
-  litestarSettings: {
+  // 通用框架优化的默认设置
+  frameworkSettings: {
     enableDebug: true,// 是否开启Debug调试栏
     enableFooter: true,// 是否默认显示底部Footer
     enableFooterCustom: true,// 是否自定义Footer
-    footerCustomContent: 'Powered by LiteStar + Knife4j Vue3',// 自定义footer内容
+    footerCustomContent: 'Powered by Knife4j Vue3',// 自定义footer内容
     enableSearch: true,// 是否显示搜索框
     enableOpenApi: true,// 是否显示OpenApi原始规范结构
     enableHomeCustom: true,//  是否开启主页自定义配置
-    homeCustomLocation: '欢迎使用 LiteStar API 文档！\n\n这是基于 LiteStar 框架构建的 API 文档界面，使用 Knife4j Vue3 提供美观的文档展示。\n\n## 特性\n- 🚀 高性能 ASGI 框架\n- 📖 自动 OpenAPI 3.0 文档生成\n- 🎨 美观的 Vue3 界面\n- 🔒 内置认证保护\n\n点击左侧菜单开始探索 API！',// 自定义主页内容
+    homeCustomLocation: '欢迎使用 Knife4j Vue3 API 文档！\n\n这是一个基于 Knife4j Vue3 构建的 API 文档界面，支持多种后端框架（FastAPI、LiteStar、Spring Boot、Go Gin 等）。\n\n## 特性\n- 🚀 高性能 Vue3 界面\n- 📖 自动 OpenAPI 3.0 文档解析\n- 🎨 美观的现代化UI\n- 🔧 强大的 API 调试功能\n- 🔒 内置认证支持\n\n点击左侧菜单开始探索 API！',// 自定义主页内容
     enableGroup: true,// 是否显示分组下拉框
     enableResponseCode: true, // 是否显示响应状态码栏
     enableSwaggerModels: true,// 是否显示界面中SwaggerModel功能
@@ -65,21 +65,19 @@ const constants = {
     enableAfterScript: true,// 调试Tab是否显示AfterScript功能
     enableDocumentManage: true,// 是否显示界面中'文档管理'功能
     enableVersion: false,// 是否开启界面中对某接口的版本控制
-    showApiUrl: true, // 接口api地址显示 - LiteStar 建议显示
+    showApiUrl: true, // 接口api地址显示
     showTagStatus: true, // 分组tag显示description属性
     enableSwaggerBootstrapUi: true, // 启用增强功能
     treeExplain: true,
     enableCacheOpenApiTable: false, // 是否开启缓存已打开的api文档
-    enableDynamicParameter: true, // 开启动态参数 - LiteStar 支持
+    enableDynamicParameter: true, // 开启动态参数
     enableFilterMultipartApis: false,
     enableFilterMultipartApiMethodType: 'POST',
     language: 'zh-CN', // 默认语言版本
     
-    // LiteStar 特定设置
-    framework: 'LiteStar',
-    frameworkVersion: '2.17.0',
-    enableLiteStarFeatures: true,
-    showFrameworkBadge: true,
+    // 框架信息
+    framework: 'Generic',
+    frameworkVersion: '1.0.0',
     customTheme: {
       primaryColor: '#1890ff',
       headerBg: '#001529'

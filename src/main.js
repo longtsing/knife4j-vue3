@@ -5,12 +5,12 @@ import { setupStore } from './store/index.js'
 import router from '@/router/index.js'
 import { setupI18n } from '@/lang/index.js'
 import { createFromIconfontCN } from '@ant-design/icons-vue'
-import { LITESTAR_CONFIG } from './config/litestar.js'
+import { FRAMEWORK_CONFIG } from './config/framework.js'
 
-// LiteStar 标识符
-window.KNIFE4J_FRAMEWORK = 'LiteStar';
-window.KNIFE4J_FRAMEWORK_VERSION = '2.17.0';
-window.LITESTAR_CONFIG = LITESTAR_CONFIG;
+// 框架标识符（通用）
+window.KNIFE4J_FRAMEWORK = 'Generic';
+window.KNIFE4J_FRAMEWORK_VERSION = '1.0.0';
+window.KNIFE4J_CONFIG = FRAMEWORK_CONFIG;
 
 String.prototype.gblen = function () {
   let len = 0
@@ -41,14 +41,14 @@ const app = createApp(App)
 app.use(router)
 app.component('my-icon', MyIcon)
 
-// 添加 LiteStar 配置到全局属性
-app.config.globalProperties.$litestar = LITESTAR_CONFIG;
+// 添加框架配置到全局属性
+app.config.globalProperties.$framework = FRAMEWORK_CONFIG;
 
 setupStore(app)
 setupI18n(app)
 
-// LiteStar 初始化完成日志
-console.log('🚀 Knife4j Vue3 + LiteStar initialized');
+// Knife4j 初始化完成日志
+console.log('🚀 Knife4j Vue3 initialized');
 console.log('📚 Framework:', window.KNIFE4J_FRAMEWORK, window.KNIFE4J_FRAMEWORK_VERSION);
 
 app.mount('#app')

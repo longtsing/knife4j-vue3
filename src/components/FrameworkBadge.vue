@@ -1,9 +1,9 @@
 <template>
-  <div class="litestar-badge">
-    <a-tooltip title="基于 LiteStar 框架构建">
+  <div class="framework-badge">
+    <a-tooltip :title="'基于 ' + frameworkName + ' 框架构建'">
       <div class="framework-info">
         <span class="framework-icon">🚀</span>
-        <span class="framework-name">LiteStar</span>
+        <span class="framework-name">{{ frameworkName }}</span>
         <span class="framework-version">{{ version }}</span>
       </div>
     </a-tooltip>
@@ -13,12 +13,13 @@
 <script setup>
 import { ref } from 'vue'
 
-// 从全局配置获取版本信息
-const version = ref(window.KNIFE4J_FRAMEWORK_VERSION || '2.17.0')
+// 从全局配置获取框架信息
+const frameworkName = ref(window.KNIFE4J_FRAMEWORK || 'API')
+const version = ref(window.KNIFE4J_FRAMEWORK_VERSION || '1.0.0')
 </script>
 
 <style scoped>
-.litestar-badge {
+.framework-badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 8px;
@@ -31,7 +32,7 @@ const version = ref(window.KNIFE4J_FRAMEWORK_VERSION || '2.17.0')
   transition: all 0.3s ease;
 }
 
-.litestar-badge:hover {
+.framework-badge:hover {
   transform: scale(1.05);
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }

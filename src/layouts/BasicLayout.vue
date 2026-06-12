@@ -214,12 +214,13 @@ function initSpringDocOpenApi() {
         locale.value = tmpI18n;
         state.enableVersion = settings.enableVersion;
         
-        // LiteStar 特殊配置
-        const isLiteStar = window.KNIFE4J_FRAMEWORK === 'LiteStar';
+        // 通用框架配置（支持 FastAPI、LiteStar、Spring Boot 等）
+        const framework = window.KNIFE4J_FRAMEWORK || 'Generic';
+        const isSpringFox = framework === 'SpringFox';
         
         initSwagger({
-          springdoc: !isLiteStar, // LiteStar 禁用 SpringDoc 模式
-          baseSpringFox: !isLiteStar, // LiteStar 禁用 SpringFox basePath 处理
+          springdoc: !isSpringFox, // 非 SpringFox 框架启用 SpringDoc 模式
+          baseSpringFox: isSpringFox, // SpringFox 使用 basePath 处理
           localStore: localStore,
           settings: settings,
           cacheApis: cacheApis,
@@ -229,11 +230,11 @@ function initSpringDocOpenApi() {
           i18nFlag: i18nParams.include,
           configSupport: false,
           i18nInstance: getCurrentI18nInstance(),
-          // LiteStar 特殊配置
-          framework: isLiteStar ? 'LiteStar' : null,
-          frameworkVersion: isLiteStar ? window.KNIFE4J_FRAMEWORK_VERSION : null,
-          disableBasePath: isLiteStar,
-          url: isLiteStar ? '/v3/api-docs/swagger-config' : undefined
+          // 框架配置
+          framework: framework,
+          frameworkVersion: window.KNIFE4J_FRAMEWORK_VERSION || '1.0.0',
+          disableBasePath: !isSpringFox,
+          url: '/v3/api-docs/swagger-config' // 统一使用 OpenAPI 3.0 端点
         })
       } else {
         //不包含
@@ -246,12 +247,13 @@ function initSpringDocOpenApi() {
           locale.value = tmpI18n;
           state.enableVersion = settings.enableVersion;
           
-          // LiteStar 特殊配置
-          const isLiteStar = window.KNIFE4J_FRAMEWORK === 'LiteStar';
+          // 通用框架配置（支持 FastAPI、LiteStar、Spring Boot 等）
+          const framework = window.KNIFE4J_FRAMEWORK || 'Generic';
+          const isSpringFox = framework === 'SpringFox';
           
           initSwagger({
-            springdoc: !isLiteStar, // LiteStar 禁用 SpringDoc 模式
-            baseSpringFox: !isLiteStar, // LiteStar 禁用 SpringFox basePath 处理
+            springdoc: !isSpringFox, // 非 SpringFox 框架启用 SpringDoc 模式
+            baseSpringFox: isSpringFox, // SpringFox 使用 basePath 处理
             localStore: localStore,
             settings: settings,
             cacheApis: cacheApis,
@@ -261,11 +263,11 @@ function initSpringDocOpenApi() {
             i18nFlag: i18nParams.include,
             configSupport: false,
             i18nInstance: getCurrentI18nInstance(),
-            // LiteStar 特殊配置
-            framework: isLiteStar ? 'LiteStar' : null,
-            frameworkVersion: isLiteStar ? window.KNIFE4J_FRAMEWORK_VERSION : null,
-            disableBasePath: isLiteStar,
-            url: isLiteStar ? '/v3/api-docs/swagger-config' : undefined
+            // 框架配置
+            framework: framework,
+            frameworkVersion: window.KNIFE4J_FRAMEWORK_VERSION || '1.0.0',
+            disableBasePath: !isSpringFox,
+            url: '/v3/api-docs/swagger-config' // 统一使用 OpenAPI 3.0 端点
           })
         })
       }

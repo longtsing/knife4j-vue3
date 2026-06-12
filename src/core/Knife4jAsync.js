@@ -66,19 +66,19 @@ function SwaggerBootstrapUi(options) {
   this.springdoc = options.springdoc || true;
   //  此处判断底层框架版本
   //  1、springfox提供的分组地址/swagger-resources
-  //  2、springdoc-open/LiteStar提供的分组地址：v3/api-docs/swagger-config
+  //  2、springdoc-open/LiteStar/FastAPI提供的分组地址：v3/api-docs/swagger-config
   //  swagger请求api地址
   if (this.springdoc) {
-    //  LiteStar 优化：优先使用 v3/api-docs/swagger-config
+    //  OpenAPI 3.0 框架（FastAPI、LiteStar 等）：优先使用 v3/api-docs/swagger-config
     const path = window.location.pathname;
     const index = path.lastIndexOf('/');
     const basePath = path.length == index + 1 ? path : path.substring(0, index);
-    //   LiteStar swagger请求api地址 - 支持多个端点
-    this.url = options.url || basePath + '/v3/api-docs/swagger-config';
-    //  备用 URL 以防主 URL 失败
+    //  优先使用传入的 URL，否则使用 /v3/api-docs/swagger-config
+    this.url = options.url || '/v3/api-docs/swagger-config';
+    //  备用 URL：尝试 /api 前缀版本（FastAPI 常用）
     this.fallbackUrl = basePath + '/api/v3/api-docs/swagger-config';
-    console.log('LiteStar Mode - Primary URL:', this.url);
-    console.log('LiteStar Mode - Fallback URL:', this.fallbackUrl);
+    console.log('OpenAPI 3.0 Mode - Primary URL:', this.url);
+    console.log('OpenAPI 3.0 Mode - Fallback URL:', this.fallbackUrl);
   } else {
     this.url = options.url || 'swagger-resources';
   }
@@ -92,9 +92,10 @@ function SwaggerBootstrapUi(options) {
   //  LiteStar 不需要 basePath 处理
   this.baseSpringFox = options.baseSpringFox || false;
   //  this.i18nInstance = null
-  this.configUrl = options.configUrl || 'swagger-resources/configuration/ui';
-  //  用于控制是否请求configUrl的配置
-  this.configSupport = options.configSupport || true;
+  //  configUrl 仅用于 SpringFox 框架，OpenAPI 3.0 框架不需要
+  this.configUrl = options.configUrl || (this.springdoc ? null : 'swagger-resources/configuration/ui');
+  //  用于控制是否请求configUrl的配置（OpenAPI 3.0 框架禁用）
+  this.configSupport = options.configSupport !== undefined ? options.configSupport : !this.springdoc;
   //  用于控制是否请求configSecurityUrl的配置
   this.securitySupport = options.securitySupport || false;
   //  LiteStar 集成标识
@@ -1293,14 +1294,18 @@ SwaggerBootstrapUi.prototype.basicInfoOAS3 = function (menu) {
     version = '',
     termsOfService = '';
   var host = KUtils.getValue(menu, 'host', '', true);
+  console.log('basicInfoOAS3 - Initial host from menu:', host);
   if (KUtils.checkUndefined(menu)) {
     if (menu.hasOwnProperty('servers') && KUtils.checkUndefined(menu['servers'])) {
       var servers = menu['servers'];
+      console.log('basicInfoOAS3 - servers array:', servers);
       if (KUtils.arrNotEmpty(servers)) {
         host = servers[0]['url'];
+        console.log('basicInfoOAS3 - host from servers[0].url:', host);
       }
     }
     that.currentInstance.host = host;
+    console.log('basicInfoOAS3 - Final host set to currentInstance:', that.currentInstance.host);
     if (menu.hasOwnProperty('info') && KUtils.checkUndefined(menu['info'])) {
       var info = menu.info;
       title = KUtils.getValue(info, 'title', '', true);
@@ -4816,9 +4821,9 @@ SwaggerBootstrapUi.prototype.createApiInfoInstance = function (path, mtype, apiI
     if (reg.test(pathname)) {
       tempPath = RegExp.$1;
     }
-    // LiteStar 特殊处理：如果检测到 /api/doc.html，不添加 /api 前缀
-    if (tempPath === '/api' && that.framework === 'LiteStar') {
-      console.log('LiteStar detected: Skipping /api basePath to avoid duplication');
+    // OpenAPI 3.0 框架特殊处理：如果检测到 /api/doc.html，不添加 /api 前缀（避免重复）
+    if (tempPath === '/api' && that.framework !== 'SpringFox') {
+      console.log(that.framework + ' detected: Skipping /api basePath to avoid duplication');
       tempPath = '';
     }
     newfullPath += tempPath;
@@ -4843,6 +4848,11 @@ SwaggerBootstrapUi.prototype.createApiInfoInstance = function (path, mtype, apiI
     newurl = tempUrl;
   }
   // var startApiTime = new Date().getTime();
+  // 如果 host 存在（来自 OpenAPI servers 配置），添加到 showUrl 前面
+  var host = that.currentInstance.host;
+  if (KUtils.strNotBlank(host) && !newurl.startsWith(host)) {
+    newurl = host + newurl;
+  }
   swpinfo.showUrl = newurl;
   // swpinfo.id='ApiInfo'+Math.round(Math.random()*1000000);
   swpinfo.instanceId = that.currentInstance.id;
@@ -7311,19 +7321,19 @@ SwaggerBootstrapUi.prototype.ajax = function (config, success, error) {
     }
     
     ajax.request(requestConfig).then(data => {
-      if (this.framework === 'LiteStar') {
-        console.log('LiteStar API Response:', requestConfig.url, data);
+      if (this.framework && this.framework !== 'SpringFox') {
+        console.log(this.framework + ' API Response:', requestConfig.url, data);
       }
       success(data);
     }).catch(err => {
-      // LiteStar 重试逻辑：如果主 URL 失败，尝试备用 URL
-      if (this.framework === 'LiteStar' && !isRetry && this.fallbackUrl && 
+      // OpenAPI 3.0 框架重试逻辑：如果主 URL 失败，尝试备用 URL
+      if (this.springdoc && !isRetry && this.fallbackUrl && 
           config.url && config.url.includes('swagger-config')) {
-        console.warn('LiteStar Primary URL failed, trying fallback:', this.fallbackUrl);
+        console.warn(this.framework + ' Primary URL failed, trying fallback:', this.fallbackUrl);
         performRequest(this.fallbackUrl, true);
       } else {
-        if (this.framework === 'LiteStar') {
-          console.error('LiteStar API Error:', requestConfig.url, err);
+        if (this.framework && this.framework !== 'SpringFox') {
+          console.error(this.framework + ' API Error:', requestConfig.url, err);
         }
         error(err);
       }
