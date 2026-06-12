@@ -4071,7 +4071,10 @@ SwaggerBootstrapUi.prototype.initApiInfoAsyncOAS3 = function (swpinfo) {
   var apiInfo = swpinfo.originalApiInfo;
   if (!swpinfo.init) {
     let oa3Data = that.currentInstance.swaggerData;
-    let refParameterObject = oa3Data['components']['parameters'];
+    let refParameterObject = null;
+    if (KUtils.checkUndefined(oa3Data['components'])) {
+      refParameterObject = oa3Data['components']['parameters'];
+    }
     let responseExample = null;
     // 如果当前对象未初始化,进行初始化
     if (apiInfo.hasOwnProperty('parameters')) {

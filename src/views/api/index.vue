@@ -91,11 +91,13 @@ export default {
         apiInfo = path;
       }
     });
-    if (!apiInfo.init) {
+    if (apiInfo && !apiInfo.init) {
       this.swagger.initApiInfoAsync(apiInfo);
     }
     // console.log(apiInfo)
-    this.storeCacheApiAddApiInfo(apiInfo, instance.groupId);
+    if (apiInfo) {
+      this.storeCacheApiAddApiInfo(apiInfo, instance.groupId);
+    }
     this.swaggerInstance = instance;
     this.api = apiInfo;
     // this.debugSupport = this.api.configurationDebugSupport;
