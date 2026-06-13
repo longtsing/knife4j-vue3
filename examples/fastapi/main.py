@@ -79,8 +79,7 @@ async def auth_middleware(request: Request, call_next):
 
     # 验证账号密码
     credentials = {
-        "hxgis": "hxgis12345",
-        "hbxqx": "hbxqx168",
+        "admin": "admin12345",
     }
     if credentials.get(username) == password:
         return await call_next(request)
