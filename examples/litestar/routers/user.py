@@ -27,13 +27,13 @@ def init_data():
 init_data()
 
 
-@get("/api/users", tags=["用户管理"], summary="获取用户列表")
+@get("/users", tags=["用户管理"], summary="获取用户列表")
 async def list_users() -> List[User]:
     """返回系统中所有用户的信息"""
     return list(users_db.values())
 
 
-@get("/api/users/{user_id:int}", tags=["用户管理"], summary="根据ID获取用户")
+@get("/users/{user_id:int}", tags=["用户管理"], summary="根据ID获取用户")
 async def get_user(user_id: int) -> User:
     """根据用户ID返回单个用户信息"""
     if user_id not in users_db:
@@ -41,7 +41,7 @@ async def get_user(user_id: int) -> User:
     return users_db[user_id]
 
 
-@post("/api/users", tags=["用户管理"], summary="创建用户")
+@post("/users", tags=["用户管理"], summary="创建用户")
 async def create_user(data: UserCreate) -> User:
     """创建一个新的用户"""
     global next_id
@@ -51,7 +51,7 @@ async def create_user(data: UserCreate) -> User:
     return user
 
 
-@put("/api/users/{user_id:int}", tags=["用户管理"], summary="更新用户")
+@put("/users/{user_id:int}", tags=["用户管理"], summary="更新用户")
 async def update_user(user_id: int, data: UserCreate) -> User:
     """根据ID更新用户信息"""
     if user_id not in users_db:
@@ -61,7 +61,7 @@ async def update_user(user_id: int, data: UserCreate) -> User:
     return user
 
 
-@delete("/api/users/{user_id:int}", tags=["用户管理"], summary="删除用户", status_code=200)
+@delete("/users/{user_id:int}", tags=["用户管理"], summary="删除用户", status_code=200)
 async def delete_user(user_id: int) -> dict:
     """根据ID删除用户"""
     if user_id not in users_db:
