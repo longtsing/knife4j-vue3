@@ -28,18 +28,11 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- SpringDoc OpenAPI 3.0 -->
+        <!-- SpringDoc OpenAPI 3.0 (仅生成 OpenAPI JSON，不含 Swagger UI) -->
         <dependency>
             <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
             <version>2.6.0</version>
-        </dependency>
-
-        <!-- Knife4j 增强（可选，提供更强的文档功能） -->
-        <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
-            <version>4.5.0</version>
         </dependency>
 
         <!-- Lombok（可选） -->
@@ -50,8 +43,40 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+        <repository>
+            <id>maven-central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
+
     <build>
         <plugins>
+            <!-- 将 Knife4j Vue3 前端资源复制到 static/api 目录 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-knife4j-dist</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/classes/static/api</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../../dist</directory>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

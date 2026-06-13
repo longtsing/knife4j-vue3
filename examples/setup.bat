@@ -21,51 +21,75 @@ if not exist "%DIST_DIR%\doc.html" (
     exit /b 1
 )
 
-echo [✓] 找到前端编译产物: %DIST_DIR%
+echo [√] 找到前端编译产物: %DIST_DIR%
 echo.
 
-:: 复制到 Java Spring Boot 示例
-echo [1/3] 复制到 java-springboot\src\main\resources\static\
-if not exist "%~dp0java-springboot\src\main\resources\static" mkdir "%~dp0java-springboot\src\main\resources\static"
-xcopy /E /I /Y "%DIST_DIR%\*" "%~dp0java-springboot\src\main\resources\static\" >nul
-echo       [✓] 完成
+:: 复制到 Java Spring Boot 示例（Maven 插件会自动处理，但复制一份方便 IDE 直接运行）
+echo [1/5] 准备 java-springboot（Maven 插件启动时自动复制）
+echo       [√] 跳过（Maven resources 插件会自动复制到 target/classes/static/api/）
 echo.
 
-:: 复制到 FastAPI 示例
-echo [2/3] 复制到 fastapi\static\
-if not exist "%~dp0fastapi\static" mkdir "%~dp0fastapi\static"
-xcopy /E /I /Y "%DIST_DIR%\*" "%~dp0fastapi\static\" >nul
-echo       [✓] 完成
+:: 复制到 FastAPI 示例（代码直接引用 ../../dist，无需复制）
+echo [2/5] 准备 fastapi（代码自动读取 ../../dist）
+echo       [√] 跳过（FastAPI 直接引用 dist 目录）
 echo.
 
-:: 复制到 LiteStar 示例
-echo [3/3] 复制到 litestar\static\
-if not exist "%~dp0litestar\static" mkdir "%~dp0litestar\static"
-xcopy /E /I /Y "%DIST_DIR%\*" "%~dp0litestar\static\" >nul
-echo       [✓] 完成
+:: 复制到 LiteStar 示例（代码直接引用 ../../dist，无需复制）
+echo [3/5] 准备 litestar（代码自动读取 ../../dist）
+echo       [√] 跳过（LiteStar 直接引用 dist 目录）
+echo.
+
+:: 复制到 Go Gin 示例
+echo [4/5] 复制到 go-gin\static\
+if not exist "%~dp0go-gin\static" mkdir "%~dp0go-gin\static"
+xcopy /E /I /Y "%DIST_DIR%\*" "%~dp0go-gin\static\" >nul
+echo       [√] 完成
+echo.
+
+:: 复制到 Go 标准库示例
+echo [5/5] 复制到 go-stdlib\static\
+if not exist "%~dp0go-stdlib\static" mkdir "%~dp0go-stdlib\static"
+xcopy /E /I /Y "%DIST_DIR%\*" "%~dp0go-stdlib\static\" >nul
+echo       [√] 完成
 echo.
 
 echo ========================================
 echo   配置完成！
 echo ========================================
 echo.
-echo 启动方式：
-echo.
-echo   Java Spring Boot:
-echo     cd java-springboot
-echo     mvn spring-boot:run
-echo     访问 http://localhost:8080/doc.html
-echo.
-echo   FastAPI:
-echo     cd fastapi
-echo     pip install -r requirements.txt
-echo     uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-echo     访问 http://localhost:8000/doc.html
-echo.
-echo   LiteStar:
-echo     cd litestar
-echo     pip install -r requirements.txt
-echo     uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-echo     访问 http://localhost:8000/doc.html
+echo ┌─────────────────────────────────────────────────────────────┐
+echo │  启动方式                                                   │
+echo ├─────────────────────────────────────────────────────────────┤
+echo │                                                             │
+echo │  Java Spring Boot (端口 8080):                              │
+echo │    cd java-springboot                                       │
+echo │    mvn clean spring-boot:run                                │
+echo │    访问 http://localhost:8080/api/doc.html                  │
+echo │                                                             │
+echo │  Python FastAPI (端口 8000):                                │
+echo │    cd fastapi                                               │
+echo │    pip install -r requirements.txt                          │
+echo │    python main.py                                           │
+echo │    访问 http://localhost:8000/doc.html                      │
+echo │    （认证: hxgis/hxgis12345 或 hbxqx/hbxqx168）            │
+echo │                                                             │
+echo │  Python LiteStar (端口 8000):                               │
+echo │    cd litestar                                              │
+echo │    pip install -r requirements.txt                          │
+echo │    uvicorn main:app --root-path /api --reload               │
+echo │    访问 http://localhost:8000/api/doc.html                  │
+echo │                                                             │
+echo │  Go Gin (端口 8080):                                        │
+echo │    cd go-gin                                                │
+echo │    go mod tidy                                              │
+echo │    go run main.go                                           │
+echo │    访问 http://localhost:8080/doc.html                      │
+echo │                                                             │
+echo │  Go 标准库 (端口 8080, 零依赖):                             │
+echo │    cd go-stdlib                                             │
+echo │    go run main.go                                           │
+echo │    访问 http://localhost:8080/doc.html                      │
+echo │                                                             │
+echo └─────────────────────────────────────────────────────────────┘
 echo.
 pause

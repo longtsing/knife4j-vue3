@@ -5,7 +5,7 @@
 ## 快速开始
 
 ```bash
-# 1. 创建虚拟环境
+# 1. 创建虚拟环境（可选）
 python -m venv venv
 venv\Scripts\activate        # Windows
 # source venv/bin/activate   # Linux/Mac
@@ -18,8 +18,11 @@ python main.py
 ```
 
 服务启动后访问：
-- Knife4j 文档：http://localhost:8000/doc.html
-- OpenAPI JSON：http://localhost:8000/api/openapi.json
+
+- **Knife4j 文档**：http://localhost:8000/doc.html
+- **OpenAPI JSON**：http://localhost:8000/api/openapi.json
+
+> **注意**：FastAPI 示例直接引用 `../../dist` 目录，无需手动复制前端产物。
 
 ## 认证
 
@@ -33,11 +36,10 @@ python main.py
 ## 项目结构
 
 ```
+fastapi/
 ├── main.py              # 入口：FastAPI 应用配置、中间件、系统端点
 ├── routers/             # 路由模块（按业务拆分）
-│   ├── test.py          # 测试路由器示例
-│   └── ...
-├── statics/             # Knife4j 静态资源
+│   └── test.py          # 测试路由器示例
 ├── docs/                # 开发文档
 ├── requirements.txt     # Python 依赖
 └── README.md
@@ -75,7 +77,7 @@ app.include_router(example_router)
 
 ## 技术栈
 
-- **FastAPI** - Web 框架
-- **Uvicorn** - ASGI 服务器
-- **ORJSON** - 高性能 JSON
+- **FastAPI 0.110.0** - Web 框架
+- **Uvicorn 0.28.0** - ASGI 服务器
+- **ORJSON 3.9.15** - 高性能 JSON
 - **Knife4j Vue3** - API 文档 UI

@@ -5,14 +5,23 @@
 ## 快速开始
 
 ```bash
-# 安装依赖
+# 1. 创建虚拟环境（可选）
+python -m venv venv
+venv\Scripts\activate        # Windows
+
+# 2. 安装依赖
 pip install -r requirements.txt
 
-# 启动服务
+# 3. 启动服务
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload --root-path /api
 ```
 
-访问文档：http://localhost:8000/api/doc.html
+服务启动后访问：
+
+- **Knife4j 文档**：http://localhost:8000/api/doc.html
+- **OpenAPI JSON**：http://localhost:8000/api/schema/openapi.json
+
+> **注意**：LiteStar 示例直接引用 `../../dist` 目录，无需手动复制前端产物。
 
 ## 项目结构
 
@@ -25,7 +34,8 @@ litestar/
 ├── models/              # 数据模型
 │   └── user.py          # 用户模型
 ├── docs/                # 开发文档
-└── requirements.txt     # 依赖
+├── requirements.txt     # 依赖
+└── README.md
 ```
 
 ## API 端点
@@ -38,6 +48,14 @@ litestar/
 | PUT | /api/users/{id} | 更新用户 |
 | DELETE | /api/users/{id} | 删除用户 |
 | GET | /api/health | 健康检查 |
+
+## 技术栈
+
+- **Python 3.10+**
+- **LiteStar 2.0+** - ASGI 框架
+- **Uvicorn** - ASGI 服务器
+- **Pydantic v2** - 数据模型
+- **Knife4j Vue3** - API 文档 UI
 
 ## 开发指南
 
