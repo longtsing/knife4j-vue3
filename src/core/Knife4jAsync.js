@@ -5278,6 +5278,17 @@ SwaggerBootstrapUi.prototype.assembleParameter = function (m, swpinfo) {
     minfo.schema = true;
     var schemaObject = m['schema'];
     var schemaType = schemaObject['type'];
+    // 处理 anyOf/oneOf：从组合类型中提取第一个非null的实际类型
+    if (!schemaType && (schemaObject['anyOf'] || schemaObject['oneOf'])) {
+      var combineSchemas = schemaObject['anyOf'] || schemaObject['oneOf'];
+      for (var ci = 0; ci < combineSchemas.length; ci++) {
+        var combineItem = combineSchemas[ci];
+        if (combineItem && combineItem['type'] && combineItem['type'] !== 'null') {
+          schemaType = combineItem['type'];
+          break;
+        }
+      }
+    }
     if (schemaType == 'array') {
       minfo.type = schemaType;
       var schItem = schemaObject['items'];
@@ -5587,6 +5598,17 @@ SwaggerBootstrapUi.prototype.assembleParameterOAS3 = function (m, swpinfo, requi
     minfo.schema = true;
     var schemaObject = m['schema'];
     var schemaType = schemaObject['type'];
+    // 处理 anyOf/oneOf：从组合类型中提取第一个非null的实际类型
+    if (!schemaType && (schemaObject['anyOf'] || schemaObject['oneOf'])) {
+      var combineSchemas = schemaObject['anyOf'] || schemaObject['oneOf'];
+      for (var ci = 0; ci < combineSchemas.length; ci++) {
+        var combineItem = combineSchemas[ci];
+        if (combineItem && combineItem['type'] && combineItem['type'] !== 'null') {
+          schemaType = combineItem['type'];
+          break;
+        }
+      }
+    }
     minfo.type = schemaType;
     if (schemaType == 'array') {
       minfo.type = schemaType;
