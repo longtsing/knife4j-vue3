@@ -1,5 +1,5 @@
 """
-三峡园区气象服务平台 - 后端入口
+FastAPI 后端示例项目 - 后端入口
 
 基于 FastAPI 构建，使用 Knife4j Vue3 作为 API 文档 UI。
 """
