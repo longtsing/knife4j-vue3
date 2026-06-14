@@ -29,6 +29,12 @@ const loadingTip = computed(() => {
     '微软雅黑', Arial, sans-serif;
 }
 
+/* 修复 Ace Editor 被全局 * 规则覆盖等宽字体，导致选区/显示/复制不一致 */
+.ace_editor,
+.ace_editor * {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+}
+
 /* 滚动条优化 */
 body {
   overflow-y: scroll;

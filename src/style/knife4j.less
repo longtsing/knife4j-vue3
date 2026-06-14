@@ -740,6 +740,10 @@
 .knife4j-debug-ace-editor {
   overflow-y: hidden;
 
+  * {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+  }
+
   .ace_scrollbar-v {
     overflow-y: hidden;
   }
@@ -752,4 +756,9 @@
 .knife4j-debug-editor-field-description {
   position: absolute;
   color: #8c8c8c;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  pointer-events: none;
 }
