@@ -18,12 +18,12 @@ export default defineConfig({
       resolvers: [AntDesignVueResolver()]
     }),
     nodePolyfills(),
-    viteCompression({
-      deleteOriginFile: false, //删除源文件
-      threshold: 10240, //压缩前最小文件大小
-      algorithm: 'gzip', //压缩算法
-      ext: '.gz', //文件类型
-    }),
+    // viteCompression({
+    //   deleteOriginFile: false, //删除源文件
+    //   threshold: 10240, //压缩前最小文件大小
+    //   algorithm: 'gzip', //压缩算法
+    //   ext: '.gz', //文件类型
+    // }),
     // removeConsole()
   ],
   resolve: {
@@ -68,7 +68,8 @@ export default defineConfig({
       output: {
         chunkFileNames: 'webjars/js/[name]-[hash].js',
         entryFileNames: 'webjars/js/[name]-[hash].js',
-        assetFileNames: 'webjars/[ext]/[name]-[hash].[ext]'
+        assetFileNames: 'webjars/[ext]/[name]-[hash].[ext]',
+        manualChunks: () => 'everything'
       }
     }
   }
