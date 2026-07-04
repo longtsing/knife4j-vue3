@@ -1,16 +1,25 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 )
+
+// ============================================================
+// 嵌入 Knife4j 前端静态文件
+// 编译前需要将 dist/ 内容复制到 static/ 目录
+// ============================================================
+
+//go:embed all:static
+var staticFS embed.FS
 
 // ============================================================
 // 数据模型
@@ -245,7 +254,7 @@ func swaggerConfig(w http.ResponseWriter, r *http.Request) {
 				"name": "default",
 			},
 		},
-		"configUrl":   "/v3/api-docs/swagger-config",
+		"configUrl":    "/v3/api-docs/swagger-config",
 		"validatorUrl": "",
 	}
 	writeJSON(w, http.StatusOK, config)
@@ -487,11 +496,17 @@ func router(w http.ResponseWriter, r *http.Request) {
 	case path == "/api/health":
 		healthCheck(w, r)
 
-	// Knife4j 静态文件
+	// Knife4j 静态文件（从 embed.FS 读取）
 	case path == "/doc.html" || path == "/doc.html/":
 		serveFile(w, r, "doc.html", "text/html")
 	case strings.HasPrefix(path, "/webjars/"):
 		serveStatic(w, r, path)
+	case strings.HasPrefix(path, "/oauth/"):
+		serveStatic(w, r, path)
+	case path == "/favicon.ico":
+		serveFile(w, r, "favicon.ico", "image/x-icon")
+	case path == "/robots.txt":
+		serveFile(w, r, "robots.txt", "text/plain")
 
 	// 默认
 	default:
@@ -500,26 +515,27 @@ func router(w http.ResponseWriter, r *http.Request) {
 }
 
 // ============================================================
-// 静态文件服务
+// 静态文件服务（从 embed.FS 读取）
 // ============================================================
 
-// staticDir 静态文件目录
-var staticDir = "./static"
+// subStaticFS 嵌入的 static 子文件系统
+var subStaticFS fs.FS
 
-// serveFile 提供单个文件
-func serveFile(w http.ResponseWriter, r *http.Request, name, contentType string) {
-	// 尝试从 static 目录读取
-	path := filepath.Join(staticDir, name)
-	data, err := os.ReadFile(path)
+func init() {
+	var err error
+	subStaticFS, err = fs.Sub(staticFS, "static")
 	if err != nil {
-		// 没有静态文件时返回提示
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, `<!DOCTYPE html>
+		log.Println("警告: 嵌入静态文件系统初始化失败:", err)
+	}
+}
+
+// notFoundHTML 当嵌入的前端文件不存在时的提示页面
+const notFoundHTML = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Knife4j Vue3 + Go</title></head>
 <body style="font-family:sans-serif;padding:40px;max-width:700px;margin:0 auto;">
 <h1>Knife4j Vue3 + Go 标准库示例</h1>
-<p>请先将 Knife4j 前端编译产物复制到 <code>static/</code> 目录：</p>
+<p>未检测到嵌入的前端文件，请重新编译：</p>
 <pre style="background:#f5f5f5;padding:16px;border-radius:8px;">
 # 1. 编译前端
 cd knife4j-vue3
@@ -528,22 +544,32 @@ pnpm install &amp;&amp; pnpm build
 # 2. 复制产物
 cp -r dist/* examples/go-stdlib/static/
 
-# 3. 重启服务
-go run main.go
+# 3. 重新编译 Go（将前端嵌入到二进制）
+cd examples/go-stdlib
+go build -o server main.go
+./server
 </pre>
 <p>然后访问 <a href="/doc.html">/doc.html</a></p>
 </body>
-</html>`)
+</html>`
+
+// serveFile 从嵌入的 FS 提供单个文件
+func serveFile(w http.ResponseWriter, r *http.Request, name, contentType string) {
+	data, err := fs.ReadFile(subStaticFS, name)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, notFoundHTML)
 		return
 	}
 	w.Header().Set("Content-Type", contentType+"; charset=utf-8")
 	w.Write(data)
 }
 
-// serveStatic 提供静态资源
+// serveStatic 从嵌入的 FS 提供静态资源（如 /webjars/js/xxx.js）
 func serveStatic(w http.ResponseWriter, r *http.Request, path string) {
-	filePath := filepath.Join(staticDir, path)
-	data, err := os.ReadFile(filePath)
+	// 去掉前导 / 以匹配 embed.FS 的相对路径
+	relPath := strings.TrimPrefix(path, "/")
+	data, err := fs.ReadFile(subStaticFS, relPath)
 	if err != nil {
 		http.NotFound(w, r)
 		return

@@ -1,12 +1,23 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
+	"log"
 	"net/http"
 	"strconv"
 	"sync"
 
 	"github.com/gin-gonic/gin"
 )
+
+// ============================================================
+// 嵌入 Knife4j 前端静态文件
+// 编译前需要将 dist/ 内容复制到 static/ 目录
+// ============================================================
+
+//go:embed all:static
+var staticFS embed.FS
 
 // ============================================================
 // 数据模型
@@ -237,21 +248,38 @@ func main() {
 					"name": "default",
 				},
 			},
-			"configUrl":   "/v3/api-docs/swagger-config",
+			"configUrl":    "/v3/api-docs/swagger-config",
 			"validatorUrl": "",
 		})
 	})
 
 	// ============================================================
-	// Knife4j 前端静态文件托管
-	// 注意：需要先编译前端并将 dist/ 内容复制到 static/ 目录
+	// Knife4j 前端静态文件托管（使用 go:embed 嵌入）
+	// 编译前需要将 dist/ 内容复制到 static/ 目录
 	// ============================================================
-	r.Static("/static", "./static")
+	subFS, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		log.Fatal("嵌入静态文件系统初始化失败:", err)
+	}
+	httpFS := http.FS(subFS)
+
+	// /doc.html 入口页面
 	r.GET("/doc.html", func(c *gin.Context) {
-		c.File("./static/doc.html")
+		c.FileFromFS("doc.html", httpFS)
 	})
-	// 静态资源回退（支持 webjars 路径）
-	r.Static("/webjars", "./static/webjars")
+	// /webjars/* 静态资源（JS/CSS）
+	webjarsFS, _ := fs.Sub(subFS, "webjars")
+	r.StaticFS("/webjars", http.FS(webjarsFS))
+	// /oauth/* OAuth2 授权页面
+	oauthFS, _ := fs.Sub(subFS, "oauth")
+	r.StaticFS("/oauth", http.FS(oauthFS))
+	// 根目录其他静态文件
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.FileFromFS("favicon.ico", httpFS)
+	})
+	r.GET("/robots.txt", func(c *gin.Context) {
+		c.FileFromFS("robots.txt", httpFS)
+	})
 
 	// ============================================================
 	// API 路由
