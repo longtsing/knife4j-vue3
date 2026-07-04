@@ -778,7 +778,7 @@ export default {
             id: KUtils.randomMd5(),
             name: param.name,
             content: param.value,
-            require: false,
+            require: true,
             description: "",
             enums: null, // 枚举下拉框
             // 枚举是否支持多选('default' | 'multiple' )
@@ -1292,7 +1292,7 @@ export default {
             id: KUtils.randomMd5(),
             name: global.name,
             type: "text",
-            require: false,
+            require: true,
             // 文件表单域的target
             target: null,
             multipart: false,
@@ -1315,7 +1315,7 @@ export default {
             id: KUtils.randomMd5(),
             name: global.name,
             type: "text",
-            require: false,
+            require: true,
             // 文件表单域的target
             target: null,
             multipart: false,
@@ -1440,7 +1440,7 @@ export default {
             id: KUtils.randomMd5(),
             name: global.name,
             type: "text",
-            require: false,
+            require: true,
             // 文件表单域的target
             target: null,
             content: global.value,

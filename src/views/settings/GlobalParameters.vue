@@ -12,15 +12,21 @@
     <div class="globalparameters">
       <a-table :columns="columns" rowKey="pkid" size="small" :dataSource="globalParameters" :pagination="pagination"
                bordered>
-        <a-row slot="operation" slot-scope="text,record">
-          <a-button icon="delete" type="danger" @click="deleteParam(record)" style="margin-left:10px;"
-          >{{ $t('global.delete') }}</a-button>
-        </a-row>
-        <template slot="paramContentLabel" slot-scope="text,record">
+        <template #operation="{text, record}">
+          <a-space>
+            <a-button type="primary" size="small" @click="editParam(record)">
+              {{ $t('global.edit') || '修改' }}
+            </a-button>
+            <a-button type="danger" size="small" @click="deleteParam(record)">
+              {{ $t('global.delete') }}
+            </a-button>
+          </a-space>
+        </template>
+        <template #paramContentLabel="{text, record}">
           <a-textarea @change="headerContentChange" :data-key="record.pkid" :defaultValue="text"
                       :autoSize="{ minRows: 2, maxRows: 6 }" allowClear />
         </template>
-        <template slot="paramTypeLable" slot-scope="text,record">
+        <template #paramTypeLable="{text, record}">
           <a-select :defaultValue="text" @change="globalParamTypeChange">
             <a-select-option :data-name="record.name" :data-key="record.pkid" value="header">header</a-select-option>
             <a-select-option :data-name="record.name" :data-key="record.pkid" value="query">query</a-select-option>
@@ -103,6 +109,7 @@ export default {
       pagination: false,
       groupId: "",
       globalParameters: [],
+      editingParam: null,
       labelCol: {
         xs: { span: 21 },
         sm: { span: 6 }
@@ -230,27 +237,42 @@ export default {
       e.preventDefault();
       const key = this.groupId;
       this.formRef.validateFields().then((values) => {
-          // 判断是否存在参数
-        const fl = this.globalParameters.filter(
-            gp => gp.name == values.name && gp.in == values.in
-        ).length
-        if (fl == 0) {
-          const pkid = values.name + values.in
-          const nvl = { ...values, pkid: pkid }
-          this.globalParameters.push(nvl);
-          localStore.getItem(Constants.globalParameter).then((val) => {
-            const dfv = val;
-            dfv[key] = this.globalParameters;
-            localStore.setItem(Constants.globalParameter, dfv);
-            // 发送全局参数更新事件，使用Vue根实例作为事件总线
-            this.$root.$emit('global-parameters-updated', {
-              groupId: key,
-              parameters: this.globalParameters
-            });
-          })
+        if (this.editingParam) {
+          // 编辑模式 - 更新现有参数
+          const newArrs = this.globalParameters.map(gp => {
+            if (gp.pkid === this.editingParam.pkid) {
+              const newPkid = values.name + values.in;
+              return { ...values, pkid: newPkid };
+            }
+            return gp;
+          });
+          this.globalParameters = newArrs;
+          this.storeGlobalParameters();
           this.visible = false;
+          this.editingParam = null;
         } else {
-          message.info("参数已存在,不可重复添加");
+          // 新增模式
+          const fl = this.globalParameters.filter(
+              gp => gp.name == values.name && gp.in == values.in
+          ).length
+          if (fl == 0) {
+            const pkid = values.name + values.in
+            const nvl = { ...values, pkid: pkid }
+            this.globalParameters.push(nvl);
+            localStore.getItem(Constants.globalParameter).then((val) => {
+              const dfv = val;
+              dfv[key] = this.globalParameters;
+              localStore.setItem(Constants.globalParameter, dfv);
+              // 发送全局参数更新事件
+              eventBus.emit(GLOBAL_PARAMETERS_UPDATED, {
+                groupId: key,
+                parameters: this.globalParameters
+              });
+            })
+            this.visible = false;
+          } else {
+            message.info("参数已存在,不可重复添加");
+          }
         }
       })
     },
@@ -261,8 +283,18 @@ export default {
     addGlobalParameters() {
       console.log(this.form)
       this.formRef.resetFields();
+      this.editingParam = null;
+      this.modelTitle = this.$t('global.model');
       this.visible = true;
       // this.$emit("childrenMethods", "addGlobalParameters", data);
+    },
+    editParam(record) {
+      this.editingParam = record;
+      this.modelTitle = this.$t('global.edit') || '修改参数';
+      this.form.name = record.name;
+      this.form.value = record.value;
+      this.form.in = record.in;
+      this.visible = true;
     }
   }
 };

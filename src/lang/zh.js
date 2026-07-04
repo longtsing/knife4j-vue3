@@ -349,12 +349,13 @@ const langOptions = {
   global: {
     tab: '全局参数设置',
     add: '添加参数',
+    edit: '修改',
     model:'新增参数',
     tableHeader: [{
         title: '参数名称',
         dataIndex: 'name',
         width: '15%',
-        scopedSlots: {
+        slots: {
           customRender: 'name'
         }
       },
@@ -363,7 +364,7 @@ const langOptions = {
         className: 'column-money',
         dataIndex: 'value',
         width: '65%',
-        scopedSlots: {
+        slots: {
           customRender: 'paramContentLabel'
         }
       },
@@ -371,14 +372,15 @@ const langOptions = {
         title: '参数类型',
         dataIndex: 'in',
         width: '10%',
-        scopedSlots: {
+        slots: {
           customRender: 'paramTypeLable'
         }
       },
       {
         title: '操作',
         dataIndex: 'operation',
-        scopedSlots: {
+        width: '15%',
+        slots: {
           customRender: 'operation'
         }
       }

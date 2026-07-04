@@ -359,12 +359,13 @@ const langOptions = {
   global: {
     tab: 'Global Parameter Settings',
     add: 'Add',
+    edit: 'Edit',
     model:'Add Parameter',
     tableHeader: [{
         title: 'name',
         dataIndex: 'name',
         width: '15%',
-        scopedSlots: {
+        slots: {
           customRender: 'name'
         }
       },
@@ -373,7 +374,7 @@ const langOptions = {
         className: 'column-money',
         dataIndex: 'value',
         width: '65%',
-        scopedSlots: {
+        slots: {
           customRender: 'paramContentLabel'
         }
       },
@@ -381,14 +382,15 @@ const langOptions = {
         title: 'type',
         dataIndex: 'in',
         width: '10%',
-        scopedSlots: {
+        slots: {
           customRender: 'paramTypeLable'
         }
       },
       {
         title: 'operation',
         dataIndex: 'operation',
-        scopedSlots: {
+        width: '15%',
+        slots: {
           customRender: 'operation'
         }
       }
