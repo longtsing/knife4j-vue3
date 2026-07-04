@@ -124,7 +124,7 @@ async def version():
 
 @app.get("/health", tags=["系统"], summary="健康检查")
 async def health_check():
-    return {"status": "ok", "service": "sanxiaBackend"}
+    return {"status": "ok", "service": "FastapiExample"}
 
 # ============================================================
 # 业务路由（从 routers/ 目录引入）

@@ -11,9 +11,9 @@
   </div>
 </template>
 <script>
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useGlobalsStore } from '@/store/modules/global.js'
-import Markdown from '../Markdown/index.vue'
+const Markdown = defineAsyncComponent(() => import('../Markdown/index.vue'))
 import { CopyrightOutlined } from '@ant-design/icons-vue'
 
 export default {

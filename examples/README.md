@@ -58,7 +58,7 @@ python main.py                             # 启动服务（端口 8000）
 
 访问：http://localhost:8000/doc.html
 
-> 文档页面需要 Basic Auth 认证：`hxgis/hxgis12345` 或 `hbxqx/hbxqx168`
+> 文档页面需要 Basic Auth 认证：`admin/admin12345`
 
 ### Python LiteStar
 

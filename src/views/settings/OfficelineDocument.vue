@@ -44,12 +44,12 @@ import markdownText from "@/components/officeDocument/markdownTransform";
 import wordText from "@/components/officeDocument/wordTransform";
 import wordTextUS from "@/components/officeDocument/wordTransformUS";
 import markdownTextUS from "@/components/officeDocument/markdownTransformUS";
-import OnlineDocument from "@/views/api/OnlineDocument.vue";
 import DownloadHtml from "./DownloadHtml.vue";
 import KUtils from "@/core/utils";
 import Constants from "@/store/constants";
 import { useGlobalsStore } from '@/store/modules/global.js'
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
+const OnlineDocument = defineAsyncComponent(() => import("@/views/api/OnlineDocument.vue"))
 import { useknife4jModels } from '@/store/knife4jModels.js'
 import { useI18n } from 'vue-i18n'
 import { message } from 'ant-design-vue'

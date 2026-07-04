@@ -473,7 +473,7 @@
                                `${param.name}.${name}`
                              ) ||
                              ignoreParameterAllKeys.some(key =>
-                               new RegExp(`^(${key}$|${key}[.[])`).test(name) || eval('/' + key + '/g').test(name)
+                               new RegExp(`^(${key}$|${key}[.[])`).test(name) || new RegExp(key, 'g').test(name)
                              )
                            ) //  处理 json 提交
                          );

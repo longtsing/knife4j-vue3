@@ -14,6 +14,7 @@ from litestar.openapi import OpenAPIConfig
 from litestar.openapi.spec import Server
 from litestar.config.cors import CORSConfig
 from litestar.static_files import create_static_files_router
+from litestar.response import File
 import os
 
 # ============================================================
@@ -33,19 +34,22 @@ from routers import (
     update_user,
     delete_user,
     health_check,
+    echo_get,
+    echo_post,
 )
 
 # ============================================================
 # 创建 Knife4j 相关路由
 # ============================================================
 
-# Swagger 配置端点
-@get(f"/{ROOT_PATH}/api-docs/swagger-config", include_in_schema=False)
+# Swagger 配置端点 - 路径必须与前端请求路径一致
+# 注意：Litestar(path=ROOT_PATH) 会自动添加 /api 前缀，所以这里只需要写 /v3/api-docs/swagger-config
+@get("/v3/api-docs/swagger-config", include_in_schema=False)
 async def swagger_config() -> dict:
     """Knife4j 所需的 Swagger 配置端点"""
     return {
-        "urls": [{"url": "/api/schema/openapi.json", "name": "default"}],
-        "configUrl": "/api/v3/api-docs/swagger-config",
+        "urls": [{"url": f"{ROOT_PATH}/openapi.json", "name": "default"}],
+        "configUrl": f"{ROOT_PATH}/v3/api-docs/swagger-config",
         "validatorUrl": ""
     }
 
@@ -65,30 +69,57 @@ api_router = Router(
         update_user,
         delete_user,
         health_check,
+        echo_get,
+        echo_post,
     ],
 )
 
-# 使用 create_static_files_router 统一管理所有静态文件
-# 这样 Knife4j 的所有静态资源（doc.html、webjars、oauth、img 等）都能正确服务
-static_router = create_static_files_router(
-    path="/",
-    directories=[STATIC_DIR],
-    html_mode=False,
+# 使用多个静态文件路由分别管理 Knife4j 的静态资源
+# doc.html 需要单独处理
+@get("/doc.html", include_in_schema=False)
+async def serve_doc_html() -> File:
+    """服务 Knife4j 的 doc.html"""
+    return File(
+        path=os.path.join(STATIC_DIR, "doc.html"),
+        content_disposition_type="inline",
+        media_type="text/html"
+    )
+
+# webjars 目录下的静态资源
+webjars_router = create_static_files_router(
+    path="/webjars",
+    directories=[os.path.join(STATIC_DIR, "webjars")],
     include_in_schema=False,
 )
+
+# oauth 目录
+oauth_router = create_static_files_router(
+    path="/oauth",
+    directories=[os.path.join(STATIC_DIR, "oauth")],
+    include_in_schema=False,
+)
+
+# favicon
+@get("/favicon.ico", include_in_schema=False)
+async def serve_favicon() -> File:
+    """服务 favicon"""
+    return File(path=os.path.join(STATIC_DIR, "favicon.ico"))
 
 app = Litestar(
     path=ROOT_PATH,
     route_handlers=[
         swagger_config,
+        serve_doc_html,
+        serve_favicon,
         api_router,
-        static_router,  # 静态文件路由放在最后，作为兜底
+        webjars_router,
+        oauth_router,
     ],
     openapi_config=OpenAPIConfig(
         title="Knife4j Vue3 LiteStar 示例",
         version="1.0.0",
         description="这是一个 Knife4j Vue3 + LiteStar 的示例项目",
-        path="/schema",
+        path="/",
         render_plugins=[],  # 禁用 LiteStar 自带的 Scalar/Swagger UI，使用 Knife4j 替代
         servers=[Server(url=ROOT_PATH, description="API 服务")],
     ),

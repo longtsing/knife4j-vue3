@@ -30,8 +30,7 @@ python main.py
 
 | 用户名 | 密码 |
 |--------|------|
-| hxgis | hxgis12345 |
-| hbxqx | hbxqx168 |
+| admin | admin12345 |
 
 ## 项目结构
 
