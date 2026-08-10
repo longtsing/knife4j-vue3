@@ -9,6 +9,8 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+
+	"knife4j-vue3-go-example/docs"
 )
 
 // ============================================================
@@ -65,13 +67,6 @@ func init() {
 // ============================================================
 
 // ListUsers 获取用户列表
-// @Summary      获取用户列表
-// @Description  返回系统中所有用户的信息
-// @Tags         用户管理
-// @Accept       json
-// @Produce      json
-// @Success      200  {array}   User
-// @Router       /api/users [get]
 func ListUsers(c *gin.Context) {
 	mu.RLock()
 	defer mu.RUnlock()
@@ -84,15 +79,6 @@ func ListUsers(c *gin.Context) {
 }
 
 // GetUser 根据ID获取用户
-// @Summary      根据ID获取用户
-// @Description  根据用户ID返回单个用户信息
-// @Tags         用户管理
-// @Accept       json
-// @Produce      json
-// @Param        id   path      int  true  "用户ID"
-// @Success      200  {object}  User
-// @Failure      404  {object}  Message
-// @Router       /api/users/{id} [get]
 func GetUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -112,15 +98,6 @@ func GetUser(c *gin.Context) {
 }
 
 // CreateUser 创建用户
-// @Summary      创建用户
-// @Description  创建一个新的用户
-// @Tags         用户管理
-// @Accept       json
-// @Produce      json
-// @Param        user  body      UserCreate  true  "用户信息"
-// @Success      200   {object}  User
-// @Failure      400   {object}  Message
-// @Router       /api/users [post]
 func CreateUser(c *gin.Context) {
 	var req UserCreate
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -146,16 +123,6 @@ func CreateUser(c *gin.Context) {
 }
 
 // UpdateUser 更新用户
-// @Summary      更新用户
-// @Description  根据ID更新用户信息
-// @Tags         用户管理
-// @Accept       json
-// @Produce      json
-// @Param        id    path      int         true  "用户ID"
-// @Param        user  body      UserCreate  true  "用户信息"
-// @Success      200   {object}  User
-// @Failure      404   {object}  Message
-// @Router       /api/users/{id} [put]
 func UpdateUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -187,15 +154,6 @@ func UpdateUser(c *gin.Context) {
 }
 
 // DeleteUser 删除用户
-// @Summary      删除用户
-// @Description  根据ID删除用户
-// @Tags         用户管理
-// @Accept       json
-// @Produce      json
-// @Param        id   path      int  true  "用户ID"
-// @Success      200  {object}  Message
-// @Failure      404  {object}  Message
-// @Router       /api/users/{id} [delete]
 func DeleteUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -215,12 +173,6 @@ func DeleteUser(c *gin.Context) {
 }
 
 // HealthCheck 健康检查
-// @Summary      健康检查
-// @Description  服务健康状态检查
-// @Tags         系统
-// @Produce      json
-// @Success      200  {object}  Message
-// @Router       /api/health [get]
 func HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, Message{Message: "ok"})
 }
@@ -229,11 +181,6 @@ func HealthCheck(c *gin.Context) {
 // 主函数
 // ============================================================
 
-// @title           Knife4j Vue3 Go 示例 API
-// @version         1.0.0
-// @description     这是一个 Knife4j Vue3 + Go Gin 的示例项目，展示如何集成 API 文档界面。
-// @host            localhost:8080
-// @BasePath        /
 func main() {
 	r := gin.Default()
 
@@ -251,6 +198,14 @@ func main() {
 			"configUrl":    "/v3/api-docs/swagger-config",
 			"validatorUrl": "",
 		})
+	})
+
+	// ============================================================
+	// OpenAPI 3.0 规范端点（由 docs 包运行时构造）
+	// ============================================================
+	r.GET("/swagger/doc.json", func(c *gin.Context) {
+		c.Header("Content-Type", "application/json; charset=utf-8")
+		_, _ = c.Writer.Write(docs.MustJSON())
 	})
 
 	// ============================================================
@@ -297,5 +252,9 @@ func main() {
 	// ============================================================
 	// 启动服务
 	// ============================================================
+	log.Printf("🚀 Knife4j Vue3 + Go Gin 示例启动")
+	log.Printf("📖 文档地址: http://localhost:8080/doc.html")
+	log.Printf("🔗 API 地址: http://localhost:8080/api/users")
+	log.Printf("📋 OpenAPI:  http://localhost:8080/swagger/doc.json")
 	r.Run(":8080")
 }

@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"knife4j-vue3-go-stdlib-example/docs"
 )
 
 // ============================================================
@@ -250,7 +252,7 @@ func swaggerConfig(w http.ResponseWriter, r *http.Request) {
 	config := map[string]interface{}{
 		"urls": []map[string]string{
 			{
-				"url":  "/openapi.json",
+				"url":  "/swagger/doc.json",
 				"name": "default",
 			},
 		},
@@ -258,210 +260,6 @@ func swaggerConfig(w http.ResponseWriter, r *http.Request) {
 		"validatorUrl": "",
 	}
 	writeJSON(w, http.StatusOK, config)
-}
-
-// openAPISpec 返回 OpenAPI 3.0 规范
-func openAPISpec(w http.ResponseWriter, r *http.Request) {
-	spec := map[string]interface{}{
-		"openapi": "3.0.3",
-		"info": map[string]interface{}{
-			"title":       "Go 标准库 API",
-			"version":     "1.0.0",
-			"description": "Go 原生 net/http + Knife4j Vue3 示例，无需任何第三方包",
-		},
-		"servers": []map[string]string{
-			{"url": "/", "description": "默认服务器"},
-		},
-		"paths": map[string]interface{}{
-			"/api/users": map[string]interface{}{
-				"get": map[string]interface{}{
-					"summary":     "获取用户列表",
-					"description": "返回系统中所有用户的信息",
-					"tags":        []string{"用户管理"},
-					"operationId": "listUsers",
-					"responses": map[string]interface{}{
-						"200": map[string]interface{}{
-							"description": "成功",
-							"content": map[string]interface{}{
-								"application/json": map[string]interface{}{
-									"schema": map[string]interface{}{
-										"type": "array",
-										"items": map[string]interface{}{
-											"$ref": "#/components/schemas/User",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				"post": map[string]interface{}{
-					"summary":     "创建用户",
-					"description": "创建一个新的用户",
-					"tags":        []string{"用户管理"},
-					"operationId": "createUser",
-					"requestBody": map[string]interface{}{
-						"required": true,
-						"content": map[string]interface{}{
-							"application/json": map[string]interface{}{
-								"schema": map[string]interface{}{
-									"$ref": "#/components/schemas/UserCreate",
-								},
-							},
-						},
-					},
-					"responses": map[string]interface{}{
-						"200": map[string]interface{}{
-							"description": "成功",
-							"content": map[string]interface{}{
-								"application/json": map[string]interface{}{
-									"schema": map[string]interface{}{
-										"$ref": "#/components/schemas/User",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			"/api/users/{id}": map[string]interface{}{
-				"get": map[string]interface{}{
-					"summary":     "根据ID获取用户",
-					"description": "根据用户ID返回单个用户信息",
-					"tags":        []string{"用户管理"},
-					"operationId": "getUser",
-					"parameters": []map[string]interface{}{
-						{
-							"name":     "id",
-							"in":       "path",
-							"required": true,
-							"schema":   map[string]string{"type": "integer"},
-							"example":  1,
-						},
-					},
-					"responses": map[string]interface{}{
-						"200": map[string]interface{}{
-							"description": "成功",
-							"content": map[string]interface{}{
-								"application/json": map[string]interface{}{
-									"schema": map[string]interface{}{
-										"$ref": "#/components/schemas/User",
-									},
-								},
-							},
-						},
-						"404": map[string]interface{}{
-							"description": "用户不存在",
-						},
-					},
-				},
-				"put": map[string]interface{}{
-					"summary":     "更新用户",
-					"description": "根据ID更新用户信息",
-					"tags":        []string{"用户管理"},
-					"operationId": "updateUser",
-					"parameters": []map[string]interface{}{
-						{
-							"name":     "id",
-							"in":       "path",
-							"required": true,
-							"schema":   map[string]string{"type": "integer"},
-						},
-					},
-					"requestBody": map[string]interface{}{
-						"required": true,
-						"content": map[string]interface{}{
-							"application/json": map[string]interface{}{
-								"schema": map[string]interface{}{
-									"$ref": "#/components/schemas/UserCreate",
-								},
-							},
-						},
-					},
-					"responses": map[string]interface{}{
-						"200": map[string]interface{}{
-							"description": "成功",
-							"content": map[string]interface{}{
-								"application/json": map[string]interface{}{
-									"schema": map[string]interface{}{
-										"$ref": "#/components/schemas/User",
-									},
-								},
-							},
-						},
-					},
-				},
-				"delete": map[string]interface{}{
-					"summary":     "删除用户",
-					"description": "根据ID删除用户",
-					"tags":        []string{"用户管理"},
-					"operationId": "deleteUser",
-					"parameters": []map[string]interface{}{
-						{
-							"name":     "id",
-							"in":       "path",
-							"required": true,
-							"schema":   map[string]string{"type": "integer"},
-						},
-					},
-					"responses": map[string]interface{}{
-						"200": map[string]interface{}{
-							"description": "删除成功",
-						},
-					},
-				},
-			},
-			"/api/health": map[string]interface{}{
-				"get": map[string]interface{}{
-					"summary":     "健康检查",
-					"description": "服务健康状态检查",
-					"tags":        []string{"系统"},
-					"operationId": "healthCheck",
-					"responses": map[string]interface{}{
-						"200": map[string]interface{}{
-							"description": "成功",
-							"content": map[string]interface{}{
-								"application/json": map[string]interface{}{
-									"schema": map[string]interface{}{
-										"$ref": "#/components/schemas/Message",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"components": map[string]interface{}{
-			"schemas": map[string]interface{}{
-				"User": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"id":    map[string]interface{}{"type": "integer", "example": 1},
-						"name":  map[string]interface{}{"type": "string", "example": "张三"},
-						"email": map[string]interface{}{"type": "string", "example": "zhangsan@example.com"},
-						"role":  map[string]interface{}{"type": "string", "example": "admin"},
-					},
-				},
-				"UserCreate": map[string]interface{}{
-					"type":     "object",
-					"required": []string{"name", "email"},
-					"properties": map[string]interface{}{
-						"name":  map[string]interface{}{"type": "string", "example": "张三"},
-						"email": map[string]interface{}{"type": "string", "example": "zhangsan@example.com"},
-						"role":  map[string]interface{}{"type": "string", "example": "admin"},
-					},
-				},
-				"Message": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"message": map[string]interface{}{"type": "string", "example": "success"},
-					},
-				},
-			},
-		},
-	}
-	writeJSON(w, http.StatusOK, spec)
 }
 
 // ============================================================
@@ -485,8 +283,10 @@ func router(w http.ResponseWriter, r *http.Request) {
 	// Knife4j 端点
 	case path == "/v3/api-docs/swagger-config":
 		swaggerConfig(w, r)
-	case path == "/openapi.json":
-		openAPISpec(w, r)
+	case path == "/swagger/doc.json":
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(docs.MustJSON())
 
 	// API 路由
 	case path == "/api/users":
@@ -617,7 +417,7 @@ func main() {
 	fmt.Printf("🚀 Knife4j Vue3 + Go 标准库示例启动\n")
 	fmt.Printf("📖 文档地址: http://localhost:%s/doc.html\n", port)
 	fmt.Printf("🔗 API 地址: http://localhost:%s/api/users\n", port)
-	fmt.Printf("📋 OpenAPI:  http://localhost:%s/openapi.json\n", port)
+	fmt.Printf("📋 OpenAPI:  http://localhost:%s/swagger/doc.json\n", port)
 	fmt.Printf("\n")
 
 	if err := http.ListenAndServe(":"+port, http.HandlerFunc(router)); err != nil {
