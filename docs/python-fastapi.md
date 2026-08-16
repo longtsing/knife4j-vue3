@@ -4,32 +4,60 @@
 
 ## 前提条件
 
-- Python 3.8+
+- Python 3.10+
 - FastAPI
 - uvicorn
+- 编译后的 Knife4j Vue3 前端
 
 ## 1. 安装依赖
 
 ```bash
-pip install fastapi uvicorn
+pip install fastapi uvicorn[standard]
 ```
 
-## 2. 创建 FastAPI 应用
+## 2. 项目结构
+
+```
+my-fastapi-app/
+├── main.py                 # FastAPI 应用入口
+├── routers/                # 业务路由模块
+├── models/                 # Pydantic 模型
+├── static/                 # Knife4j 前端产物（不纳入版本控制）
+│   ├── doc.html
+│   ├── webjars/
+│   └── oauth/
+├── requirements.txt
+└── README.md
+```
+
+`static/` 目录需手动生成（前端编译后从 `dist/*` 复制过来）。
+
+## 3. 创建 FastAPI 应用
+
+参考 [examples/fastapi/main.py](../examples/fastapi/main.py)：
 
 ```python
 # main.py
-from fastapi import FastAPI
+import os
+from datetime import datetime
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List
+from fastapi.responses import FileResponse
+from starlette.staticfiles import StaticFiles
+
+ROOT_PATH = '/api'                              # 反向代理前缀
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")  # Knife4j 前端
 
 app = FastAPI(
-    title="My API",
-    description="API Documentation with Knife4j Vue3",
-    version="1.0.0"
+    root_path=ROOT_PATH,
+    title='FastAPI 后端示例项目',
+    version='1.0.0',
+    docs_url=None,                              # 禁用内置 Swagger UI
+    redoc_url=None,                             # 禁用内置 ReDoc
+    servers=[{"url": ROOT_PATH, "description": "API 服务"}],
 )
 
-# 配置 CORS
+# CORS（开发模式全开）
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,207 +66,150 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 数据模型
-class User(BaseModel):
-    id: int = None
-    name: str
-    email: str
+# 业务路由
+from routers.test import router as test_router
+app.include_router(test_router, prefix="/tp")
 
-# 模拟数据库
-users_db: List[User] = []
-
-# API 路由
-@app.get("/api/users", response_model=List[User], tags=["用户管理"])
-def list_users():
-    """获取所有用户"""
-    return users_db
-
-@app.post("/api/users", response_model=User, tags=["用户管理"])
-def create_user(user: User):
-    """创建新用户"""
-    user.id = len(users_db) + 1
-    users_db.append(user)
-    return user
-
-@app.get("/api/users/{user_id}", response_model=User, tags=["用户管理"])
-def get_user(user_id: int):
-    """根据ID获取用户"""
-    for user in users_db:
-        if user.id == user_id:
-            return user
-    return None
-```
-
-## 3. 配置 OpenAPI 端点
-
-FastAPI 自动生成 OpenAPI 3.0 规范，但 Knife4j 需要特定的 swagger-config 端点。
-
-### 方式一：直接使用 FastAPI 自带的 OpenAPI（推荐）
-
-FastAPI 默认提供以下端点：
-- `/openapi.json` - OpenAPI 3.0 规范
-- `/docs` - Swagger UI（可选）
-- `/redoc` - ReDoc（可选）
-
-Knife4j 需要 `swagger-config` 端点，需要额外创建：
-
-```python
-# 添加到 main.py
-@app.get("/v3/api-docs/swagger-config")
-def swagger_config():
-    """Knife4j 需要的 swagger-config 端点"""
+# Knife4j swagger-config 端点（必须是 /v3/api-docs/swagger-config）
+@app.get("/v3/api-docs/swagger-config", include_in_schema=False)
+async def swagger_config():
     return {
-        "urls": [
-            {
-                "url": "/openapi.json",
-                "name": "default"
-            }
-        ],
-        "configUrl": "/v3/api-docs/swagger-config",
+        "urls": [{"url": f"{ROOT_PATH}/openapi.json", "name": "default"}],
+        "configUrl": f"{ROOT_PATH}/v3/api-docs/swagger-config",
         "validatorUrl": ""
     }
 
-@app.get("/v3/api-docs")
-def api_docs():
-    """返回 OpenAPI 规范"""
-    from fastapi.openapi.utils import get_openapi
-    return get_openapi(
-        title=app.title,
-        version=app.version,
-        description=app.description,
-        routes=app.routes,
-    )
-```
-
-### 方式二：使用自定义 OpenAPI 路径
-
-```python
-from fastapi.openapi.docs import get_swagger_ui_html
-
+# Knife4j 入口页面
 @app.get("/doc.html", include_in_schema=False)
-async def custom_swagger_ui():
-    """自定义 Knife4j 界面入口"""
-    return get_swagger_ui_html(
-        openapi_url="/v3/api-docs",
-        title="API Documentation",
-        swagger_js_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js",
-        swagger_css_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css",
+async def knife4j_ui():
+    return FileResponse(os.path.join(STATIC_DIR, "doc.html"), media_type="text/html")
+
+# 静态资源兜底路由（必须放在最后）
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+## 4. 启动流程
+
+```bash
+# 1. 在 knife4j-vue3 根目录编译前端
+cd /path/to/knife4j-vue3
+pnpm install
+pnpm build
+
+# 2. 复制前端产物到本项目
+cp -r dist/* my-fastapi-app/static/
+
+# 3. 启动服务
+cd my-fastapi-app
+pip install -r requirements.txt
+python main.py
+```
+
+访问：http://localhost:8000/doc.html
+
+## 5. Knife4j 集成原理
+
+```
+浏览器访问 /doc.html
+  ↓
+doc.html 自带脚本检测当前路径前缀 → apiBasePath = '/api'
+  ↓
+请求 /v3/api-docs/swagger-config → 拿到 OpenAPI JSON 地址 /api/openapi.json
+  ↓
+请求 /api/openapi.json → FastAPI 内置的 OpenAPI 规范
+  ↓
+Knife4j 渲染文档界面
+```
+
+调试时，Knife4j 内部 ajax 会自动带上 `/api` 前缀（通过 `apiBasePath`）。
+
+> **2026-08 修复**：Knife4j 前端修复了**重复前缀 bug**。即使 swagger-config 返回 `/api/openapi.json`（含前缀）也不会再被拼接成 `/api/api/openapi.json`。
+
+## 6. 关于 root_path
+
+`root_path` 用于反向代理前缀。如果你的部署架构是：
+
+```
+nginx /api/*  →  uvicorn (root_path=/api)
+```
+
+那么所有 `app.include_router(prefix='/users')` 的端点都会暴露在 `/api/users`。OpenAPI JSON 中的 `servers[0].url` 也要设为 `/api`。
+
+如果不使用反向代理，可省略 `root_path`：
+
+```python
+app = FastAPI()  # 端点直接是 /api/users
+```
+
+## 7. 高级配置
+
+### 7.1 文档访问认证（Basic Auth）
+
+```python
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    protected_paths = [
+        f"{ROOT_PATH}/openapi.json",
+        f"{ROOT_PATH}/doc.html",
+        f"{ROOT_PATH}/v3/api-docs/swagger-config",
+    ]
+    if request.url.path not in protected_paths:
+        return await call_next(request)
+
+    # 解析 Basic Auth
+    username, password = "", ""
+    try:
+        encoded = request.headers["Authorization"]
+        decoded = base64.b64decode(encoded[6:]).decode("utf-8")
+        username, password = decoded.split(":")
+    except Exception:
+        pass
+
+    credentials = {"admin": "admin12345"}
+    if credentials.get(username) == password:
+        return await call_next(request)
+
+    return Response(
+        content="Authorization header is missing or invalid",
+        status_code=401,
+        headers={"WWW-Authenticate": 'BASIC realm="You should provide Authorization header"'},
     )
 ```
 
-## 4. 运行服务
+详见 [examples/fastapi/main.py](../examples/fastapi/main.py) 的完整实现。
 
-```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-## 5. 前端代理配置
-
-在 `vite.config.js` 中配置代理：
-
-```javascript
-export default defineConfig({
-  server: {
-    proxy: {
-      '/v3/api-docs': {
-        target: 'http://localhost:8000',
-        changeOrigin: true
-      },
-      '/openapi.json': {
-        target: 'http://localhost:8000',
-        changeOrigin: true
-      },
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
-  }
-})
-```
-
-## 6. 启动前端
-
-```bash
-pnpm dev
-```
-
-访问 `http://localhost:5173/doc.html`
-
----
-
-## 完整目录结构
-
-```
-my-fastapi-app/
-├── main.py
-├── requirements.txt
-└── README.md
-```
-
-## requirements.txt
-
-```
-fastapi>=0.100.0
-uvicorn>=0.23.0
-pydantic>=2.0
-```
-
----
-
-## 高级配置
-
-### 分组 API 文档
+### 7.2 Bearer 认证（推荐）
 
 ```python
-from fastapi import APIRouter
-
-# 创建路由分组
-user_router = APIRouter(prefix="/api/users", tags=["用户管理"])
-order_router = APIRouter(prefix="/api/orders", tags=["订单管理"])
-
-@user_router.get("/")
-def list_users():
-    return []
-
-@order_router.get("/")
-def list_orders():
-    return []
-
-# 注册路由
-app.include_router(user_router)
-app.include_router(order_router)
-```
-
-### 添加认证
-
-```python
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 security = HTTPBearer()
 
-@app.get("/api/protected")
-def protected_endpoint(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """需要认证的接口"""
+async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if credentials.credentials != "valid-token":
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+@app.get("/api/protected", dependencies=[Depends(verify_token)])
+async def protected_endpoint():
     return {"message": "success"}
 ```
 
-在 Knife4j 界面中，通过「文档管理」→「全局参数设置」添加 Authorization Header。
+在 Knife4j 界面中，通过「文档管理」→「全局参数设置」添加 Authorization Header（值填 `Bearer valid-token`）。
 
-### 自定义 Schema
+### 7.3 自定义 Schema
 
 ```python
-from pydantic import Field
+from pydantic import BaseModel, Field
 from enum import Enum
 
 class UserRole(str, Enum):
     admin = "admin"
     user = "user"
-    guest = "guest"
 
 class User(BaseModel):
     """用户模型"""
@@ -246,7 +217,7 @@ class User(BaseModel):
     name: str = Field(description="用户名", min_length=1, max_length=50)
     email: str = Field(description="邮箱地址", examples=["user@example.com"])
     role: UserRole = Field(description="用户角色", default=UserRole.user)
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -258,92 +229,67 @@ class User(BaseModel):
         }
 ```
 
----
-
-## 生产环境编译与部署
-
-### 1. 编译前端项目
-
-```bash
-# 进入前端项目目录
-cd knife4j-vue3
-
-# 安装依赖
-pnpm install
-
-# 编译生产版本
-pnpm build
-```
-
-编译产物在 `dist/` 目录下，包含：
-- `doc.html` — Knife4j 入口页面
-- `webjars/` — JS/CSS 静态资源
-
-### 2. 方式一：FastAPI 直接托管静态文件（推荐）
-
-将前端产物放入 FastAPI 的静态文件目录，由 FastAPI 统一托管：
-
-#### 项目结构
-
-```
-my-fastapi-app/
-├── main.py
-├── static/
-│   ├── doc.html
-│   └── webjars/
-│       ├── js/
-│       └── css/
-├── requirements.txt
-└── Dockerfile
-```
-
-#### 代码配置
+### 7.4 自定义 OpenAPI 元信息
 
 ```python
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-import os
-
-app = FastAPI()
-
-# 挂载静态文件目录
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
-# Knife4j 入口页面
-@app.get("/doc.html", include_in_schema=False)
-async def knife4j_ui():
-    return FileResponse(os.path.join(static_dir, "doc.html"))
-
-# 其他静态资源的回退路由
-@app("/{full_path:path}", include_in_schema=False)
-async def serve_static(full_path: str):
-    file_path = os.path.join(static_dir, full_path)
-    if os.path.isfile(file_path):
-        return FileResponse(file_path)
-    return FileResponse(os.path.join(static_dir, "doc.html"))
+app = FastAPI(
+    title="My API",
+    description="API Documentation with Knife4j Vue3",
+    version="1.0.0",
+    contact={"name": "Support", "email": "support@example.com"},
+    license_info={"name": "Apache 2.0", "url": "https://..."},
+    openapi_tags=[
+        {"name": "用户管理", "description": "用户 CRUD 接口"},
+        {"name": "订单管理", "description": "订单相关接口"},
+    ],
+)
 ```
 
-#### 复制前端产物
+## 8. 路由分组
+
+```python
+from fastapi import APIRouter
+
+user_router = APIRouter(prefix="/api/users", tags=["用户管理"])
+order_router = APIRouter(prefix="/api/orders", tags=["订单管理"])
+
+@user_router.get("/")
+async def list_users():
+    return []
+
+@user_router.get("/{user_id}")
+async def get_user(user_id: int):
+    return {}
+
+app.include_router(user_router)
+app.include_router(order_router)
+```
+
+## 9. 生产环境部署
+
+### 9.1 嵌入式（推荐）
+
+直接拷贝 `static/` 随应用一起发布：
 
 ```bash
-# 复制编译产物到 FastAPI 静态目录
-cp -r knife4j-vue3/dist/* my-fastapi-app/static/
+# 编译前端
+cd knife4j-vue3 && pnpm build
+
+# 复制
+cp -r dist/* my-fastapi-app/static/
+
+# 启动
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-启动后访问：`http://your-server:8000/doc.html`
-
-### 3. 方式二：Nginx 反向代理
-
-#### Nginx 配置
+### 9.2 Nginx 反向代理
 
 ```nginx
 server {
     listen 80;
     server_name docs.example.com;
 
-    # Knife4j 前端静态资源
+    # Knife4j 前端
     location / {
         root /var/www/knife4j-vue3/dist;
         index doc.html;
@@ -359,36 +305,14 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # OpenAPI 规范代理
-    location /v3/api-docs/ {
-        proxy_pass http://127.0.0.1:8000/v3/api-docs/;
-        proxy_set_header Host $host;
-    }
-
+    # OpenAPI 端点
     location /openapi.json {
         proxy_pass http://127.0.0.1:8000/openapi.json;
-        proxy_set_header Host $host;
     }
 }
 ```
 
-#### 部署步骤
-
-```bash
-# 1. 编译前端
-pnpm build
-
-# 2. 复制到 Nginx 目录
-sudo cp -r dist/* /var/www/knife4j-vue3/
-
-# 3. 测试并重载 Nginx
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-### 4. 方式三：Docker 部署
-
-#### Dockerfile
+### 9.3 Docker 一体化
 
 ```dockerfile
 # 构建阶段
@@ -402,39 +326,19 @@ RUN pnpm build
 # 运行阶段
 FROM python:3.12-slim
 WORKDIR /app
-
-# 安装 Python 依赖
 COPY my-fastapi-app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# 复制后端代码
 COPY my-fastapi-app/ ./
-
-# 复制前端编译产物到静态目录
 COPY --from=frontend /app/dist ./static/
 
 EXPOSE 8000
-
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 ```
 
-#### 构建与运行
+### 9.4 Gunicorn + Uvicorn（生产推荐）
 
 ```bash
-# 构建镜像
-docker build -t my-fastapi-knife4j .
-
-# 运行容器
-docker run -d -p 8000:8000 --name fastapi-app my-fastapi-knife4j
-```
-
-### 5. 使用 Gunicorn + Uvicorn 部署（推荐生产环境）
-
-```bash
-# 安装 gunicorn
 pip install gunicorn
-
-# 启动（4 个 worker）
 gunicorn main:app \
   -k uvicorn.workers.UvicornWorker \
   -w 4 \
@@ -443,60 +347,52 @@ gunicorn main:app \
   --error-logfile -
 ```
 
-### 6. 验证部署
+### 9.5 验证部署
 
 ```bash
-# 检查前端页面
 curl -I http://your-server:8000/doc.html
-
-# 检查 OpenAPI 端点
 curl http://your-server:8000/v3/api-docs/swagger-config
-
-# 检查 API 是否正常
 curl http://your-server:8000/api/users
 ```
 
----
+## 10. 完整示例
 
-## 常见问题
+[examples/fastapi/](../examples/fastapi/) 提供开箱即用的可运行示例：
 
-### Q: Knife4j 显示 "No API definitions found"？
+```bash
+cd examples/fastapi
+# 前置：根目录 pnpm build 生成 dist/
+cp -r ../dist/* static/
+pip install -r requirements.txt
+python main.py
+# 访问 http://localhost:8000/doc.html（需 Basic Auth: admin/admin12345）
+```
 
-**A:** 检查 swagger-config 端点是否正确返回：
+## 11. 常见问题
+
+### Q1：调试面板响应区空白？
+
+A：检查浏览器 Network：
+
+- `/api/openapi.json` 应返回 200 + JSON
+- 调试请求的 URL 应为 `/api/xxx`，**不应**是 `/api/api/xxx`
+
+Knife4j 前端已在 2026-08 修复重复前缀 bug，swagger-config 返回 `/api/openapi.json`（含前缀）不会再被拼接。
+
+### Q2：Knife4j 显示 "No API definitions found"？
+
+A：检查 swagger-config 端点：
 
 ```bash
 curl http://localhost:8000/v3/api-docs/swagger-config
 ```
 
-应该返回类似：
-```json
-{
-  "urls": [{"url": "/openapi.json", "name": "default"}]
-}
-```
+应返回包含 `urls` 数组的 JSON。`url` 字段指向 `/api/openapi.json`。
 
-### Q: 如何处理 /api 前缀？
+### Q3：端口冲突？
 
-**A:** FastAPI 的路由已经包含前缀，在 `vite.config.js` 的代理 rewrite 中去除 `/api` 前缀：
+A：FastAPI 默认 8000；Java Spring Boot 用 8080；Go 用 8080。修改 `uvicorn.run(... port=9000)` 或在 `application.yml` 中修改 `server.port`。
 
-```javascript
-rewrite: (path) => path.replace(/^\/api/, '')
-```
+### Q4：接口返回 422 错误？
 
-### Q: 接口返回 422 错误？
-
-**A:** 这是 Pydantic 验证错误，检查请求体是否符合模型定义。Knife4j 的 Debug 调试栏会显示详细的验证错误信息。
-
----
-
-## 与 Swagger UI 的区别
-
-| 特性 | Knife4j Vue3 | Swagger UI |
-|------|-------------|------------|
-| 界面美观度 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-| 在线调试 | ✅ 增强版 | ✅ 基础版 |
-| Markdown 文档 | ✅ | ❌ |
-| 全局搜索 | ✅ | ❌ |
-| 参数缓存 | ✅ | ❌ |
-| cURL 生成 | ✅ | ❌ |
-| 多语言 | ✅ | 部分 |
+A：Pydantic 验证失败。检查请求体是否符合模型定义。Knife4j 调试面板会显示详细错误。

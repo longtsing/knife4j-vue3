@@ -33,7 +33,7 @@
 
 - **在线调试面板**：无需 Postman，直接在文档中发送请求、查看响应
 - **自动 cURL 生成**：一键复制请求命令，方便团队协作
-- **全局参数管理**：统一配置 Authorization、自定义 Header 等公共参数
+- **全局参数管理**：统一配置 Authorization、自定义 Header 等公共参数（**支持修改和删除**）
 - **参数缓存**：调试参数自动保存，刷新页面不丢失
 
 ### 📖 增强的文档展示
@@ -53,14 +53,15 @@
 
 ## 支持的后端框架
 
-| 框架 | 语言 | OpenAPI 版本 | 集成难度 | 状态 |
-|------|------|-------------|---------|------|
-| **Spring Boot** (SpringDoc / Springfox) | Java | 2.0 / 3.0 | ⭐ 极简 | ✅ 完全支持 |
-| **FastAPI** | Python | 3.0 | ⭐⭐ 简单 | ✅ 完全支持 |
-| **LiteStar** | Python | 3.0 | ⭐⭐ 简单 | ✅ 完全支持 |
-| **Gin** | Go | 3.0 | ⭐⭐ 简单 | ✅ 完全支持 |
-| **JFinal** | Java | 2.0 / 3.0 | ⭐ 极简 | ✅ 完全支持 |
-| **通用 OpenAPI 3.0** | 任意语言 | 3.0 | ⭐⭐⭐ 中等 | ✅ 完全支持 |
+| 框架 | 语言 | OpenAPI 版本 | OpenAPI 来源 | 集成难度 | 状态 |
+|------|------|-------------|-------------|---------|------|
+| **Spring Boot** (SpringDoc) | Java | 3.0 | 注解自动生成 | ⭐ 极简 | ✅ 完全支持 |
+| **FastAPI** | Python | 3.0 | 装饰器自动生成 | ⭐⭐ 简单 | ✅ 完全支持 |
+| **LiteStar** | Python | 3.0 | 装饰器自动生成 | ⭐⭐ 简单 | ✅ 完全支持 |
+| **Gin** | Go | 3.0 | **运行时构造** | ⭐⭐ 简单 | ✅ 完全支持 |
+| **Go 标准库**（零依赖） | Go | 3.0 | **运行时构造** | ⭐⭐ 简单 | ✅ 完全支持 |
+| **JFinal** | Java | 2.0 / 3.0 | 注解自动生成 | ⭐ 极简 | ✅ 完全支持 |
+| **通用 OpenAPI 3.0** | 任意语言 | 3.0 | 自定义 | ⭐⭐⭐ 中等 | ✅ 完全支持 |
 
 > 💡 **通用适配原则**：只要你的后端能暴露 `/v3/api-docs/swagger-config` 端点，就能接入本项目。
 
@@ -86,12 +87,14 @@
 
 ## 快速开始
 
-### 方式一：直接使用（推荐）
+### 方式一：使用预编译产物（推荐）
 
-将编译产物部署到你的后端项目中，即可拥有专业级 API 文档界面。
+直接使用 [releases](https://github.com/longtsing/knife4j-vue3/releases) 中已编译的 `dist/` 目录，部署到你的后端项目。
+
+### 方式二：从源码构建
 
 ```bash
-# 1. 获取项目
+# 1. 克隆项目
 git clone <repo-url>
 cd knife4j-vue3
 
@@ -100,16 +103,15 @@ pnpm install
 
 # 3. 编译生产版本
 pnpm build
+# 产物输出到 dist/ 目录
 
-# 4. 将 dist/ 目录部署到后端项目
+# 4. 将 dist/ 部署到后端项目
 ```
 
-### 方式二：开发模式
+### 方式三：开发模式（热更新）
 
 ```bash
-# 启动开发服务器（热更新）
 pnpm dev
-
 # 访问 http://localhost:5173/doc.html
 ```
 
@@ -129,23 +131,35 @@ proxy: {
 
 ## 后端集成示例
 
-### Java Spring Boot（3 行配置）
+### Java Spring Boot
 
 ```xml
+<!-- pom.xml -->
 <dependency>
-    <groupId>com.github.xiaoymin</groupId>
-    <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
-    <version>4.5.0</version>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+    <version>2.6.0</version>
 </dependency>
 ```
 
-```yaml
-springdoc:
-  swagger-ui:
-    path: /doc.html
+```java
+// SwaggerConfigController.java
+@RestController
+public class SwaggerConfigController {
+    @GetMapping("/api/v3/api-docs/swagger-config")
+    public Map<String, Object> swaggerConfig() {
+        return Map.of(
+            "urls", List.of(Map.of("url", "/api/v3/api-docs", "name", "default")),
+            "configUrl", "/api/v3/api-docs/swagger-config",
+            "validatorUrl", ""
+        );
+    }
+}
 ```
 
-### Python FastAPI（5 行配置）
+详细：[docs/java-springboot.md](./docs/java-springboot.md)
+
+### Python FastAPI
 
 ```python
 from fastapi import FastAPI
@@ -153,36 +167,103 @@ from fastapi.responses import FileResponse
 
 app = FastAPI(docs_url=None)  # 禁用默认 Swagger UI
 
+@app.get("/api/v3/api-docs/swagger-config", include_in_schema=False)
+async def swagger_config():
+    return {
+        "urls": [{"url": "/api/openapi.json", "name": "default"}],
+        "configUrl": "/api/v3/api-docs/swagger-config",
+        "validatorUrl": ""
+    }
+
 @app.get("/doc.html", include_in_schema=False)
 async def knife4j_ui():
-    return FileResponse("static/doc.html")
+    return FileResponse("static/doc.html", media_type="text/html")
 ```
 
-### Python LiteStar（5 行配置）
+详细：[docs/python-fastapi.md](./docs/python-fastapi.md)
+
+### Python LiteStar
 
 ```python
 from litestar import Litestar, get
-from litestar.response import Response
+from litestar.response import File
+from litestar.openapi import OpenAPIConfig
+
+@get("/v3/api-docs/swagger-config", include_in_schema=False)
+async def swagger_config() -> dict:
+    return {
+        "urls": [{"url": "/api/openapi.json", "name": "default"}],
+        "configUrl": "/api/v3/api-docs/swagger-config",
+        "validatorUrl": ""
+    }
 
 @get("/doc.html", include_in_schema=False)
-async def knife4j_ui():
-    with open("static/doc.html", "r") as f:
-        return Response(content=f.read(), media_type="text/html")
+async def knife4j_ui() -> File:
+    return File(path="static/doc.html", media_type="text/html")
+
+app = Litestar(
+    path="/api",
+    route_handlers=[swagger_config, knife4j_ui],
+    openapi_config=OpenAPIConfig(
+        path="/",
+        render_plugins=[],   # 禁用 LiteStar 自带 UI
+    ),
+)
 ```
 
-### Go Gin（5 行配置）
+详细：[docs/python-litestar.md](./docs/python-litestar.md)
+
+### Go Gin（运行时构造 OpenAPI）
 
 ```go
-// swagger-config 端点
-r.GET("/v3/api-docs/swagger-config", func(c *gin.Context) {
-    c.JSON(200, gin.H{
-        "urls": []gin.H{{"url": "/openapi.json", "name": "default"}},
+package main
+
+import (
+    "github.com/gin-gonic/gin"
+    "myapp/docs"
+)
+
+func main() {
+    r := gin.Default()
+
+    // swagger-config 端点
+    r.GET("/v3/api-docs/swagger-config", func(c *gin.Context) {
+        c.JSON(200, gin.H{
+            "urls": []gin.H{{"url": "/swagger/doc.json", "name": "default"}},
+            "configUrl": "/v3/api-docs/swagger-config",
+            "validatorUrl": "",
+        })
     })
-})
-// Knife4j 静态文件
-r.Static("/static", "./static")
-r.GET("/doc.html", func(c *gin.Context) { c.File("./static/doc.html") })
+
+    // OpenAPI 端点
+    r.GET("/swagger/doc.json", func(c *gin.Context) {
+        c.Header("Content-Type", "application/json")
+        c.Writer.Write(docs.MustJSON())
+    })
+
+    // 嵌入前端（编译后单二进制部署）
+    r.GET("/doc.html", ...)
+    r.StaticFS("/webjars", http.FS(subFS))
+
+    r.Run(":8080")
+}
 ```
+
+`docs/openapi.go` 使用结构体表示 OpenAPI 3.0 + 链式 Builder：
+
+```go
+docs.Register("GET", "/api/users",
+    docs.Op("获取用户列表", "用户管理").
+        Res("200", "成功", docs.Arr(docs.Ref("User"), "用户列表")))
+```
+
+详细：[docs/go-gin.md](./docs/go-gin.md)
+
+### Go 标准库（零依赖）
+
+与 go-gin 完全相同的设计，业务代码只使用 `net/http`，编译后只依赖 Go 运行时。
+
+详细：[docs/go-stdlib.md](./docs/go-stdlib.md)
 
 > 📚 完整集成指南请参阅 [docs/](./docs/) 目录
 
@@ -190,24 +271,29 @@ r.GET("/doc.html", func(c *gin.Context) { c.File("./static/doc.html") })
 
 ## 示例项目
 
-`examples/` 目录包含四个**开箱即用**的完整示例：
+`examples/` 目录包含 **5 个**开箱即用的完整示例：
 
 ```bash
-# 一键配置（Windows）
-cd examples && setup.bat
-
-# 或手动配置
-cp -r dist/* examples/fastapi/static/
-cd examples/fastapi && uvicorn main:app --port 8000
+# 一键复制 Knife4j 前端产物到各示例（PowerShell）
+foreach ($proj in @("fastapi", "litestar", "java-springboot")) {
+    $dest = "$PWD\examples\$proj\"
+    if ($proj -eq "java-springboot") { $dest = "$dest\src\main\resources\" }
+    $dest = $dest + "static"
+    if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
+    New-Item -ItemType Directory -Path $dest -Force | Out-Null
+    Copy-Item -Path "$PWD\dist\*" -Destination $dest -Recurse -Force
+}
 ```
 
 | 示例 | 启动命令 | 访问地址 |
 |------|---------|---------|
-| [Java Spring Boot](./examples/java-springboot) | `mvn spring-boot:run` | http://localhost:8080/doc.html |
-| [FastAPI](./examples/fastapi) | `uvicorn main:app --port 8000` | http://localhost:8000/doc.html |
-| [LiteStar](./examples/litestar) | `uvicorn main:app --port 8000` | http://localhost:8000/doc.html |
-| [Go Gin](./examples/go) | `go run main.go` | http://localhost:8080/doc.html |
+| [Java Spring Boot](./examples/java-springboot) | `mvn spring-boot:run` | http://localhost:8080/api/doc.html |
+| [FastAPI](./examples/fastapi) | `python main.py` | http://localhost:8000/doc.html |
+| [LiteStar](./examples/litestar) | `uvicorn main:app --root-path /api` | http://localhost:8000/api/doc.html |
+| [Go Gin](./examples/go-gin) | `go run main.go` | http://localhost:8080/doc.html |
 | [Go 标准库](./examples/go-stdlib) | `go run main.go`（零依赖） | http://localhost:8080/doc.html |
+
+> 每个示例项目都有独立的 README，详见 [examples/README.md](./examples/README.md)
 
 ---
 
@@ -245,7 +331,7 @@ knife4j-vue3/
 │   │   │   └── ScriptView.vue       # 脚本视图
 │   │   ├── index/                   # 首页
 │   │   └── settings/                # 设置管理
-│   │       ├── GlobalParameters.vue # 全局参数配置
+│   │       ├── GlobalParameters.vue # 全局参数配置（支持修改/删除）
 │   │       ├── Authorize.vue        # 认证管理
 │   │       └── Settings.vue         # 界面设置
 │   │
@@ -272,16 +358,18 @@ knife4j-vue3/
 │   ├── java-springboot/             # Spring Boot 完整示例
 │   ├── fastapi/                     # FastAPI 完整示例
 │   ├── litestar/                    # LiteStar 完整示例
-│   ├── go/                          # Go Gin 完整示例
-│   ├── go-stdlib/                   # Go 标准库示例（零依赖）
-│   └── setup.bat                    # 一键配置脚本
+│   ├── go-gin/                      # Go Gin 完整示例（含 docs/openapi.go）
+│   ├── go-stdlib/                   # Go 标准库示例（零依赖，含 docs/openapi.go）
+│   └── README.md                    # 示例项目总览
 │
 ├── docs/                            # 集成文档
 │   ├── java-springboot.md           # Java 集成指南
 │   ├── python-fastapi.md            # FastAPI 集成指南
 │   ├── python-litestar.md           # LiteStar 集成指南
 │   ├── go-gin.md                    # Go Gin 集成指南
-│   └── go-stdlib.md                 # Go 标准库集成指南（零依赖）
+│   ├── go-stdlib.md                 # Go 标准库集成指南（零依赖）
+│   ├── openapi-loading.md           # OpenAPI 加载机制
+│   └── other.md                     # 其他框架指南
 │
 ├── doc.html                         # 构建入口 HTML
 ├── vite.config.js                   # Vite 构建配置
@@ -299,7 +387,7 @@ knife4j-vue3/
 │  ┌─────────────────────────────────────────────────────┐│
 │  │              Knife4j Vue3 前端                       ││
 │  │  ┌─────────┐  ┌──────────┐  ┌──────────────────┐  ││
-│  │  │ UI 层   │  │ 状态管理  │  │   核心解析引擎    │  ││
+│  │  │ UI 层   │  │ 状态管理  │  │   核心解析引擎     │  ││
 │  │  │(Ant     │  │ (Pinia)  │  │  (Knife4jAsync)  │  ││
 │  │  │ Design) │  │          │  │                  │  ││
 │  │  └────┬────┘  └────┬─────┘  └────────┬─────────┘  ││
@@ -309,8 +397,9 @@ knife4j-vue3/
 │          ▼            ▼                 ▼               │
 │  ┌─────────────────────────────────────────────────────┐│
 │  │              HTTP 请求                               ││
-│  │  GET /v3/api-docs/swagger-config  → OpenAPI 规范     ││
-│  │  GET /api/*                       → 业务 API         ││
+│  │  GET {prefix}/v3/api-docs/swagger-config            ││
+│  │  GET {prefix}/openapi.json（或 /v3/api-docs 等）      ││
+│  │  GET {prefix}/api/*（业务 API）                       ││
 │  └─────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────┘
                            │
@@ -318,8 +407,8 @@ knife4j-vue3/
 ┌─────────────────────────────────────────────────────────┐
 │                   后端服务                               │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │
-│  │ Spring   │  │ FastAPI  │  │ LiteStar │  │  其他   │ │
-│  │ Boot     │  │ (Python) │  │ (Python) │  │ 框架   │ │
+│  │ Spring   │  │ FastAPI  │  │ LiteStar │  │  Go    │ │
+│  │ Boot     │  │ (Python) │  │ (Python) │  │ (Gin)  │ │
 │  └──────────┘  └──────────┘  └──────────┘  └────────┘ │
 │       │              │              │            │      │
 │       └──────────────┴──────────────┴────────────┘      │
@@ -385,6 +474,69 @@ Vite 使用 `.env` 文件来管理环境变量，不同文件在不同场景下�
 
 ---
 
+## 故障排查（FAQ）
+
+### 1. 调试面板响应区空白？
+
+最常见原因：**重复路径前缀**。
+
+```bash
+# 期望
+GET /api/users        → 200
+
+# 实际（修复前可能出现的）
+GET /api/api/users    → 404
+```
+
+Knife4j 前端已在 2026-08 修复此 bug，确保使用最新版本（`pnpm build` 后再 `cp -r dist/*`）。
+
+### 2. "No API definitions found"？
+
+检查后端 swagger-config 端点：
+
+```bash
+curl http://localhost:8080/api/v3/api-docs/swagger-config
+```
+
+应返回：
+
+```json
+{
+  "urls": [{"url": "/api/v3/api-docs", "name": "default"}],
+  "configUrl": "/api/v3/api-docs/swagger-config"
+}
+```
+
+### 3. 全局参数添加后实际请求未携带？
+
+进入「文档管理」→「全局参数设置」，**确认新添加的参数左侧复选框是勾选状态**。未勾选的参数不会在请求中发送。
+
+### 4. 前端资源 404？
+
+每个示例的 `static/` 目录都不在版本控制里，需要先编译前端并复制：
+
+```bash
+pnpm build
+cp -r dist/* examples/<project>/static/    # 大多数项目
+cp -r dist/* examples/java-springboot/src/main/resources/static/   # Java 项目
+```
+
+### 5. 端口冲突？
+
+各示例默认端口：
+
+| 示例 | 默认 |
+|------|------|
+| Java Spring Boot | 8080 |
+| FastAPI | 8000 |
+| LiteStar | 8000 |
+| Go Gin | 8080 |
+| Go 标准库 | 8080 |
+
+启动两个都用 8080 的项目时，先启动的项目用 `mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8090` 或修改 `r.Run(":9090")`。
+
+---
+
 ## 与同类工具对比
 
 | 能力 | Knife4j Vue3 | Swagger UI | Redoc | Apifox |
@@ -400,6 +552,7 @@ Vite 使用 `.env` 文件来管理环境变量，不同文件在不同场景下�
 | **多语言** | ✅ 中/英/日 | 部分 | ✅ | ✅ |
 | **跨语言后端** | ✅ 通用 | ✅ 通用 | ✅ 通用 | ✅ |
 | **国内生态适配** | ✅ 完美 | 一般 | 一般 | ✅ |
+| **零依赖部署** | ✅（Go 标准库示例） | ❌ | ❌ | ❌ |
 
 ---
 
@@ -413,8 +566,10 @@ pnpm build
 ```
 
 产物输出到 `dist/` 目录，包含：
+
 - `doc.html` — Knife4j 入口页面
 - `webjars/` — JS/CSS 静态资源
+- `oauth/` — OAuth2 授权页面
 
 ### 部署方案
 
@@ -423,6 +578,7 @@ pnpm build
 | **嵌入后端** | 单体应用 | 将 `dist/` 复制到后端的 static 目录 |
 | **Nginx 代理** | 微服务架构 | Nginx 托管前端，反向代理后端 API |
 | **Docker** | 容器化部署 | 多阶段构建，前端编译 + 后端运行一体化 |
+| **单二进制**（仅 Go） | CLI、嵌入式工具 | Go 用 `go:embed` 把前端打入二进制 |
 
 > 📚 详细部署指南请参阅各 [后端集成文档](./docs/)
 
