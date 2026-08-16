@@ -20,7 +20,7 @@ from starlette.staticfiles import StaticFiles
 ROOT_PATH = '/api'  # 反向代理前缀，部署时按需修改
 PORT = 8000
 START_TIME = datetime.now()
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "../../dist")
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 # ============================================================
 # FastAPI 应用实例

@@ -22,7 +22,7 @@ import os
 # ============================================================
 ROOT_PATH = '/api'
 # 静态资源使用 knife4j-vue3 的编译产物
-STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../dist"))
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 # ============================================================
 # 导入路由

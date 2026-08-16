@@ -2,6 +2,34 @@
 
 基于 LiteStar 框架集成 Knife4j Vue3 API 文档界面。
 
+## 前置准备：生成前端产物
+
+本示例的 `static/` 目录存放 Knife4j Vue3 编译产物，**不纳入版本控制**，需要先手动生成：
+
+```bash
+# 1. 在项目根目录编译前端
+cd /path/to/knife4j-vue3
+pnpm install
+pnpm build
+# 产物输出到 dist/ 目录
+
+# 2. 复制到本示例的 static/ 目录
+cp -r dist/* examples/litestar/static/
+# Windows PowerShell:
+# Copy-Item -Path dist\* -Destination examples\litestar\static\ -Recurse -Force
+```
+
+`static/` 目录应包含：
+
+```
+static/
+├── doc.html        # Knife4j 入口页面
+├── favicon.ico
+├── robots.txt
+├── webjars/        # JS/CSS 静态资源
+└── oauth/          # OAuth2 授权页面
+```
+
 ## 快速开始
 
 ```bash
@@ -20,8 +48,6 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload --root-path /api
 
 - **Knife4j 文档**：http://localhost:8000/api/doc.html
 - **OpenAPI JSON**：http://localhost:8000/api/schema/openapi.json
-
-> **注意**：LiteStar 示例直接引用 `../../dist` 目录，无需手动复制前端产物。
 
 ## 项目结构
 

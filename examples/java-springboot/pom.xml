@@ -67,7 +67,7 @@
                             <outputDirectory>${project.build.directory}/classes/static/api</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>../../dist</directory>
+                                    <directory>src/main/resources/static</directory>
                                     <includes>
                                         <include>**/*</include>
                                     </includes>

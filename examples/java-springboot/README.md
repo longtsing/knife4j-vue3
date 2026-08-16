@@ -2,21 +2,46 @@
 
 基于 Spring Boot 3.2 + Knife4j Vue3 的后端 API 示例项目。
 
+## 前置准备：生成前端产物
+
+本示例的 `src/main/resources/static/` 目录存放 Knife4j Vue3 编译产物，**不纳入版本控制**，需要先手动生成：
+
+```bash
+# 1. 在项目根目录编译前端
+cd /path/to/knife4j-vue3
+pnpm install
+pnpm build
+# 产物输出到 dist/ 目录
+
+# 2. 复制到本示例的 src/main/resources/static/ 目录（Java 标准位置）
+cp -r dist/* examples/java-springboot/src/main/resources/static/
+# Windows PowerShell:
+# Copy-Item -Path dist\* -Destination examples\java-springboot\src\main\resources\static\ -Recurse -Force
+```
+
+`src/main/resources/static/` 目录应包含：
+
+```
+src/main/resources/static/
+├── doc.html        # Knife4j 入口页面
+├── favicon.ico
+├── robots.txt
+├── webjars/        # JS/CSS 静态资源
+└── oauth/          # OAuth2 授权页面
+```
+
 ## 快速开始
 
 ```bash
-# 1. 先编译前端产物（在项目根目录）
-cd ../..
-pnpm install
-pnpm build
+# 前置：先按上面"前置准备"生成 src/main/resources/static/ 目录
 
-# 2. 启动服务
+# 启动服务
 cd examples/java-springboot
 mvn clean spring-boot:run
 ```
 
 `mvn spring-boot:run` 会自动：
-- 将 `../../dist` 的前端产物复制到 `target/classes/static/api/`
+- 将 `src/main/resources/static/` 目录的前端产物复制到 `target/classes/static/api/`
 - 编译 Java 源码
 - 启动 Spring Boot 服务
 
@@ -43,7 +68,8 @@ java-springboot/
 │   └── model/
 │       └── User.java                    # 用户实体（Lombok）
 ├── src/main/resources/
-│   └── application.yml                  # Spring Boot 配置
+│   ├── application.yml                  # Spring Boot 配置
+│   └── static/                          # Knife4j 前端产物（由 pnpm build 生成后手动复制）
 └── README.md
 ```
 
@@ -84,4 +110,4 @@ server:
 
 ### 前端资源 404
 
-确保已执行 `pnpm build`，且 `../../dist` 目录存在。Maven 的 `generate-resources` 阶段会自动复制文件。
+确保已执行 `pnpm build` 生成 `dist/`，并复制到本示例的 `src/main/resources/static/` 目录。Maven 的 `generate-resources` 阶段会从该目录复制到 `target/classes/static/api/`。

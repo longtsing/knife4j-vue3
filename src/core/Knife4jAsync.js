@@ -7324,20 +7324,26 @@ SwaggerBootstrapUi.prototype.log = function (msg) {
   } */
 }
 SwaggerBootstrapUi.prototype.ajax = function (config, success, error) {
-  const ajax = DebugAxios.create({
-    baseURL: import.meta.env.VITE_APP_BASE_API
-  })
+  // 只对相对路径（不以 / 开头）追加 baseURL，避免与 swagger-config 中
+  // 已含完整路径前缀的 URL（如 /api/v3/api-docs）拼接出 /api/api/...。
+  const baseURL = import.meta.env.VITE_APP_BASE_API
+  const ajax = DebugAxios.create()
   ajax.interceptors.response.use(response => {
     return response.data;
   }, error => {
     return Promise.reject(error);
   })
-  
+
   // LiteStar 特定的重试逻辑
   const performRequest = (url, isRetry = false) => {
     const requestConfig = { ...config };
     if (url) {
       requestConfig.url = url;
+    }
+    // 仅当 URL 为相对路径时才拼接 baseURL。
+    const reqUrl = requestConfig.url || ''
+    if (baseURL && !/^([a-z][a-z0-9+.-]*:|\/\/|\/)/i.test(reqUrl)) {
+      requestConfig.url = baseURL.replace(/\/$/, '') + '/' + reqUrl.replace(/^\//, '')
     }
     
     ajax.request(requestConfig).then(data => {

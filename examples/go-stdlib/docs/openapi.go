@@ -40,7 +40,7 @@ type Tag struct {
 
 type Components struct {
 	SecuritySchemes map[string]*SecurityScheme `json:"securitySchemes,omitempty"`
-	Schemas          map[string]*Schema         `json:"schemas,omitempty"`
+	Schemas         map[string]*Schema         `json:"schemas,omitempty"`
 }
 
 type SecurityScheme struct {
@@ -58,8 +58,8 @@ type Schema struct {
 	Properties           map[string]*Schema `json:"properties,omitempty"`
 	Required             []string           `json:"required,omitempty"`
 	Items                *Schema            `json:"items,omitempty"`
-	Enum                 []any             `json:"enum,omitempty"`
-	AdditionalProperties any               `json:"additionalProperties,omitempty"`
+	Enum                 []any              `json:"enum,omitempty"`
+	AdditionalProperties any                `json:"additionalProperties,omitempty"`
 }
 
 // Path 一个 URL 路径下若干 HTTP 方法的集合。
@@ -121,6 +121,11 @@ func Get() *Spec {
 // Register 注册一个端点。
 //
 // 多次调用按 path 聚合到同一个 Path 对象；同一 path+method 重复注册 panic。
+//
+// 注意：本函数内部会调用 once.Do(build) 保证 spec 已初始化，因此
+// registerEndpoints() 不能在 build() 内部调用，否则会自递归死锁
+// （sync.Once 在 build 执行期间持有互斥锁，再次 Do 会阻塞）。
+// 正确做法见本文件末尾的 init()：先 once.Do(build) 再 registerEndpoints()。
 func Register(method, path string, op *Operation) {
 	once.Do(build) // 保证 schemas 已初始化
 	p, ok := spec.Paths[path]
@@ -317,7 +322,18 @@ func build() {
 	AddSchema("UserCreate", UserCreate)
 	AddSchema("Message", Message)
 
-	// 端点清单（与 main.go 中的路由注册保持同步）
+	// 注意：endpoints 注册必须放在 build() **之外**，否则 Register 内部
+	// `once.Do(build)` 会自递归死锁（sync.Once 在 build 执行期间持有互斥锁）。
+}
+
+// init 在包加载时执行：
+//  1. 通过 once.Do(build) 初始化 spec 树（注册所有 schema）；
+//  2. 然后再调用 registerEndpoints() 注册所有 HTTP 端点。
+//
+// 注意：第 2 步必须放在 build() **之外**，否则 Register 内部会
+// `once.Do(build)` 自递归死锁。
+func init() {
+	once.Do(build)
 	registerEndpoints()
 }
 

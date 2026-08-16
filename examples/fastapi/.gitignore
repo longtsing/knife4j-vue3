@@ -1,1 +1,4 @@
 __pycache__/
+
+# Knife4j Vue3 前端产物（由根目录 pnpm build 生成后复制进来，不纳入版本控制）
+static/
